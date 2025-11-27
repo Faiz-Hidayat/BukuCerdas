@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { BookOpen, Menu, X, User, LogOut, LayoutDashboard } from 'lucide-react';
+import { BookOpen, Menu, X, User, LogOut, LayoutDashboard, ShoppingCart, Package } from 'lucide-react';
 import Link from 'next/link';
 
 interface UserData {
@@ -14,6 +14,7 @@ const Navbar: React.FC = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [user, setUser] = useState<UserData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [cartCount, setCartCount] = useState(0);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -29,6 +30,9 @@ const Navbar: React.FC = () => {
           const jsonData = await res.json();
           if (jsonData.sukses && jsonData.data) {
             setUser(jsonData.data);
+            if (jsonData.data.role === 'user') {
+              fetchCartCount();
+            }
           }
         }
       } catch (error) {
@@ -41,6 +45,19 @@ const Navbar: React.FC = () => {
 
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  const fetchCartCount = async () => {
+    try {
+      const res = await fetch('/api/keranjang');
+      if (res.ok) {
+        const data = await res.json();
+        const count = data.itemKeranjang?.reduce((acc: number, item: any) => acc + item.jumlah, 0) || 0;
+        setCartCount(count);
+      }
+    } catch (error) {
+      console.error('Failed to fetch cart count', error);
+    }
+  };
 
   const handleLogout = async () => {
     try {
@@ -70,18 +87,31 @@ const Navbar: React.FC = () => {
             <Link href="/" className="text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors">
               Beranda
             </Link>
-            <a href="/#showcase" className="text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors">
-              Showcase
-            </a>
-            <a href="/#katalog" className="text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors">
-              Katalog
-            </a>
+            {user?.role === 'user' ? (
+              <>
+                <Link href="/katalog" className="text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors">
+                  Katalog
+                </Link>
+                <Link href="/pesanan-saya" className="text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors">
+                  Pesanan Saya
+                </Link>
+              </>
+            ) : (
+              <>
+                <a href="/#showcase" className="text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors">
+                  Showcase
+                </a>
+                <a href="/#katalog" className="text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors">
+                  Katalog
+                </a>
+              </>
+            )}
             <Link href="/tentang-kami" className="text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors">
               Tentang
             </Link>
-            <a href="/#kontak" className="text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors">
+            <Link href="/kontak" className="text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors">
               Kontak
-            </a>
+            </Link>
           </div>
 
           {/* Auth Buttons */}
@@ -90,6 +120,16 @@ const Navbar: React.FC = () => {
               <div className="w-20 h-8 bg-slate-100 rounded-full animate-pulse" />
             ) : user ? (
               <div className="flex items-center gap-4">
+                {user.role === 'user' && (
+                  <Link href="/keranjang" className="relative p-2 text-slate-600 hover:text-slate-900 transition-colors">
+                    <ShoppingCart className="w-5 h-5" />
+                    {cartCount > 0 && (
+                      <span className="absolute top-0 right-0 bg-red-500 text-white text-xs font-bold w-4 h-4 flex items-center justify-center rounded-full animate-bounce">
+                        {cartCount}
+                      </span>
+                    )}
+                  </Link>
+                )}
                 <span className="text-sm font-medium text-slate-600">
                   Halo, {user.namaLengkap ? user.namaLengkap.split(' ')[0] : 'User'}
                 </span>
@@ -152,13 +192,39 @@ const Navbar: React.FC = () => {
           >
             Beranda
           </Link>
-          <a 
-            href="/#katalog"
-            className="block text-sm font-medium text-slate-600 hover:text-slate-900"
-            onClick={() => setIsMobileMenuOpen(false)}
-          >
-            Katalog
-          </a>
+          {user?.role === 'user' ? (
+            <>
+              <Link 
+                href="/katalog"
+                className="block text-sm font-medium text-slate-600 hover:text-slate-900"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                Katalog
+              </Link>
+              <Link 
+                href="/pesanan-saya"
+                className="block text-sm font-medium text-slate-600 hover:text-slate-900"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                Pesanan Saya
+              </Link>
+              <Link 
+                href="/keranjang"
+                className="block text-sm font-medium text-slate-600 hover:text-slate-900"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                Keranjang ({cartCount})
+              </Link>
+            </>
+          ) : (
+            <a 
+              href="/#katalog"
+              className="block text-sm font-medium text-slate-600 hover:text-slate-900"
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              Katalog
+            </a>
+          )}
           <Link 
             href="/tentang-kami"
             className="block text-sm font-medium text-slate-600 hover:text-slate-900"
@@ -166,13 +232,13 @@ const Navbar: React.FC = () => {
           >
             Tentang
           </Link>
-          <a 
-            href="/#kontak"
+          <Link 
+            href="/kontak"
             className="block text-sm font-medium text-slate-600 hover:text-slate-900"
             onClick={() => setIsMobileMenuOpen(false)}
           >
             Kontak
-          </a>
+          </Link>
           <div className="pt-4 flex flex-col gap-3 border-t border-slate-100 mt-2">
             {loading ? (
               <div className="w-full h-10 bg-slate-100 rounded-lg animate-pulse" />

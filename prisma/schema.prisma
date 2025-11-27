@@ -23,12 +23,14 @@ enum StatusAkun {
 }
 
 enum StatusPembayaran {
+  belum_dibayar
   menunggu_konfirmasi
   terkonfirmasi
   dibatalkan
 }
 
 enum StatusPesanan {
+  menunggu_konfirmasi
   diproses
   dikirim
   selesai
@@ -65,8 +67,39 @@ model User {
   alamatUser       AlamatUser[]
   pesanan          Pesanan[]
   ulasanBuku       UlasanBuku[]
+  keranjang        Keranjang?
 
   @@map("user")
+}
+
+// Model Keranjang
+model Keranjang {
+  idKeranjang      Int              @id @default(autoincrement()) @map("id_keranjang")
+  idUser           Int              @unique @map("id_user")
+  tanggalUpdate    DateTime         @updatedAt @map("tanggal_update")
+
+  // Relasi
+  user             User             @relation(fields: [idUser], references: [idUser])
+  itemKeranjang    ItemKeranjang[]
+
+  @@map("keranjang")
+}
+
+// Model Item Keranjang
+model ItemKeranjang {
+  idItem           Int              @id @default(autoincrement()) @map("id_item")
+  idKeranjang      Int              @map("id_keranjang")
+  idBuku           Int              @map("id_buku")
+  jumlah           Int              @default(1)
+  tanggalDitambahkan DateTime       @default(now()) @map("tanggal_ditambahkan")
+
+  // Relasi
+  keranjang        Keranjang        @relation(fields: [idKeranjang], references: [idKeranjang])
+  buku             Buku             @relation(fields: [idBuku], references: [idBuku])
+
+  @@map("item_keranjang")
+  @@index([idKeranjang])
+  @@index([idBuku])
 }
 
 // Model Kategori Buku
@@ -94,6 +127,7 @@ model Buku {
   harga            Decimal          @db.Decimal(10, 2)
   sinopsis         String?          @db.Text
   coverUrl         String?          @map("cover_url") @db.VarChar(500)
+  rating           Float            @default(0)
   statusAktif      Boolean          @default(true) @map("status_aktif")
   tanggalDibuat    DateTime         @default(now()) @map("tanggal_dibuat")
   
@@ -101,6 +135,7 @@ model Buku {
   kategoriBuku     KategoriBuku     @relation(fields: [idKategori], references: [idKategori])
   detailPesanan    DetailPesanan[]
   ulasanBuku       UlasanBuku[]
+  itemKeranjang    ItemKeranjang[]
 
   @@map("buku")
   @@index([idKategori])

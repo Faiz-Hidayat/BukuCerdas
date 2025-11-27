@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE `buku` ADD COLUMN `rating` DOUBLE NOT NULL DEFAULT 0;
