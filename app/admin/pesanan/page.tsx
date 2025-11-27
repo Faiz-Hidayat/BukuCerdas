@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Search, Eye, Filter, Package, CheckCircle, Clock, XCircle, Truck } from "lucide-react";
+import { Search, Eye, Filter, Package, CheckCircle, Clock, XCircle, Truck, Printer, Play } from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 
@@ -23,6 +23,7 @@ export default function PesananPage() {
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
     const [statusFilter, setStatusFilter] = useState("all");
+    const [dateFilter, setDateFilter] = useState("");
 
     useEffect(() => {
         fetchOrders();
@@ -48,8 +49,10 @@ export default function PesananPage() {
             order.user.namaLengkap.toLowerCase().includes(searchTerm.toLowerCase());
 
         const matchesStatus = statusFilter === "all" || order.statusPesanan === statusFilter;
+        
+        const matchesDate = !dateFilter || new Date(order.tanggalPesan).toISOString().split('T')[0] === dateFilter;
 
-        return matchesSearch && matchesStatus;
+        return matchesSearch && matchesStatus && matchesDate;
     });
 
     const formatCurrency = (val: string | number) => {
@@ -88,6 +91,26 @@ export default function PesananPage() {
         );
     };
 
+    const handleProcessOrder = async (id: number) => {
+        if (!confirm("Proses pesanan ini? Status akan diubah menjadi 'Diproses'.")) return;
+
+        try {
+            const res = await fetch(`/api/admin/pesanan/${id}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ statusPesanan: "diproses" }),
+            });
+
+            if (res.ok) {
+                fetchOrders();
+            } else {
+                alert("Gagal memproses pesanan");
+            }
+        } catch (error) {
+            console.error("Error processing order", error);
+        }
+    };
+
     const tabs = [
         { id: "all", label: "Semua" },
         { id: "diproses", label: "Diproses" },
@@ -121,14 +144,22 @@ export default function PesananPage() {
                         ))}
                     </div>
 
-                    <div className="relative max-w-md">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                    <div className="flex flex-col md:flex-row gap-4">
+                        <div className="relative flex-1">
+                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                            <input
+                                type="text"
+                                placeholder="Cari kode pesanan atau nama pelanggan..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="w-full pl-12 pr-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all"
+                            />
+                        </div>
                         <input
-                            type="text"
-                            placeholder="Cari kode pesanan atau nama pelanggan..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full pl-12 pr-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all"
+                            type="date"
+                            value={dateFilter}
+                            onChange={(e) => setDateFilter(e.target.value)}
+                            className="px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all text-slate-600"
                         />
                     </div>
                 </div>
@@ -195,12 +226,31 @@ export default function PesananPage() {
                                         </td>
                                         <td className="px-6 py-5">{getStatusBadge(order.statusPesanan)}</td>
                                         <td className="px-6 py-5 text-right">
-                                            <Link
-                                                href={`/admin/pesanan/${order.idPesanan}`}
-                                                className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-600 hover:text-amber-600 hover:border-amber-200 hover:bg-amber-50 rounded-lg transition-all text-xs font-medium shadow-sm">
-                                                <Eye className="w-3.5 h-3.5" />
-                                                Detail
-                                            </Link>
+                                            <div className="flex justify-end gap-2">
+                                                <Link
+                                                    href={`/admin/pesanan/${order.idPesanan}`}
+                                                    className="p-2 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-all"
+                                                    title="Detail Pesanan"
+                                                >
+                                                    <Eye className="w-4 h-4" />
+                                                </Link>
+                                                {order.statusPesanan === "diproses" && (
+                                                    <button
+                                                        onClick={() => handleProcessOrder(order.idPesanan)}
+                                                        className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                                                        title="Proses Pesanan"
+                                                    >
+                                                        <Play className="w-4 h-4" />
+                                                    </button>
+                                                )}
+                                                <button
+                                                    onClick={() => window.open(`/admin/pesanan/${order.idPesanan}?print=true`, '_blank')}
+                                                    className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-all"
+                                                    title="Cetak Invoice"
+                                                >
+                                                    <Printer className="w-4 h-4" />
+                                                </button>
+                                            </div>
                                         </td>
                                     </tr>
                                 ))

@@ -20,6 +20,8 @@ export default function UserPage() {
     const [users, setUsers] = useState<User[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
+    const [roleFilter, setRoleFilter] = useState("all");
+    const [statusFilter, setStatusFilter] = useState("all");
     
     // Modal & Form State
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -154,10 +156,17 @@ export default function UserPage() {
     };
 
     const filteredUsers = users.filter(
-        (u) =>
-            u.namaLengkap.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            u.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            u.username.toLowerCase().includes(searchTerm.toLowerCase())
+        (u) => {
+            const matchesSearch = 
+                u.namaLengkap.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                u.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                u.username.toLowerCase().includes(searchTerm.toLowerCase());
+            
+            const matchesRole = roleFilter === "all" || u.role === roleFilter;
+            const matchesStatus = statusFilter === "all" || u.statusAkun === statusFilter;
+
+            return matchesSearch && matchesRole && matchesStatus;
+        }
     );
 
     return (
@@ -179,8 +188,8 @@ export default function UserPage() {
             </div>
 
             <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-xl border border-white/20 overflow-hidden">
-                <div className="p-6 border-b border-slate-100 bg-slate-50/50">
-                    <div className="relative max-w-md">
+                <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex flex-col md:flex-row gap-4">
+                    <div className="relative flex-1">
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
                         <input
                             type="text"
@@ -189,6 +198,27 @@ export default function UserPage() {
                             onChange={(e) => setSearchTerm(e.target.value)}
                             className="w-full pl-12 pr-4 py-3 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all shadow-sm"
                         />
+                    </div>
+                    <div className="flex gap-4">
+                        <select
+                            value={roleFilter}
+                            onChange={(e) => setRoleFilter(e.target.value)}
+                            className="px-4 py-3 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all shadow-sm text-slate-600"
+                        >
+                            <option value="all">Semua Role</option>
+                            <option value="admin">Admin</option>
+                            <option value="user">User</option>
+                        </select>
+                        <select
+                            value={statusFilter}
+                            onChange={(e) => setStatusFilter(e.target.value)}
+                            className="px-4 py-3 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all shadow-sm text-slate-600"
+                        >
+                            <option value="all">Semua Status</option>
+                            <option value="aktif">Aktif</option>
+                            <option value="nonaktif">Nonaktif</option>
+                            <option value="suspended">Suspended</option>
+                        </select>
                     </div>
                 </div>
 
