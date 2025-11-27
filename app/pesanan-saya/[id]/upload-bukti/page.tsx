@@ -30,7 +30,7 @@ export default function UploadBuktiPage() {
       const formData = new FormData();
       formData.append('buktiPembayaran', file);
 
-      const res = await fetch(`/api/user/pesanan/${params.id}/upload-bukti`, {
+      const res = await fetch(`/api/pesanan/${params.id}/bukti-pembayaran`, {
         method: 'POST',
         body: formData,
       });

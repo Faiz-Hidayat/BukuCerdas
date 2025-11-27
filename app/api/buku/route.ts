@@ -27,7 +27,7 @@ export async function GET(request: Request) {
   if (sort === 'termurah') {
     orderBy = { harga: 'asc' };
   } else if (sort === 'terlaris') {
-     // orderBy = { detailPesanan: { _count: 'desc' } };
+     orderBy = { detailPesanan: { _count: 'desc' } };
   }
 
   try {

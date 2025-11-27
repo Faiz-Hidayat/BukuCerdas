@@ -74,3 +74,31 @@ export async function POST(
     return NextResponse.json({ error: 'Gagal mengirim ulasan' }, { status: 500 });
   }
 }
+
+export async function GET(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    const idBuku = parseInt(id);
+
+    const reviews = await prisma.ulasanBuku.findMany({
+      where: { idBuku },
+      include: {
+        user: {
+          select: {
+            namaLengkap: true,
+            fotoProfilUrl: true,
+          },
+        },
+      },
+      orderBy: { tanggalUlasan: 'desc' },
+    });
+
+    return NextResponse.json(reviews);
+  } catch (error) {
+    console.error('Error fetching reviews:', error);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+  }
+}
