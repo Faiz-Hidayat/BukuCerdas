@@ -22,6 +22,10 @@ const nextConfig = {
         protocol: 'https',
         hostname: 'transparenttextures.com',
       },
+      {
+        protocol: 'https',
+        hostname: '**',
+      },
     ],
   },
 };
