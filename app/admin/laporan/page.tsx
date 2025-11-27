@@ -58,7 +58,60 @@ export default function LaporanPage() {
 
     return (
         <div className="space-y-8">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <style jsx global>{`
+                @media print {
+                    @page {
+                        margin: 20mm;
+                        size: auto;
+                    }
+                    body {
+                        background: white;
+                    }
+                    aside, nav, header, .no-print {
+                        display: none !important;
+                    }
+                    main {
+                        padding: 0 !important;
+                        margin: 0 !important;
+                        width: 100% !important;
+                    }
+                    .print-hidden {
+                        display: none !important;
+                    }
+                    .print-full-width {
+                        width: 100% !important;
+                        max-width: none !important;
+                        flex: none !important;
+                    }
+                    /* Reset shadows and backgrounds for ink saving */
+                    .shadow-xl, .shadow-lg, .shadow-md, .shadow-sm {
+                        box-shadow: none !important;
+                        border: 1px solid #e2e8f0 !important;
+                    }
+                    /* Chart adjustments */
+                    .bg-gradient-to-t {
+                        background: #64748b !important; /* slate-500 */
+                        -webkit-print-color-adjust: exact;
+                        print-color-adjust: exact;
+                    }
+                }
+            `}</style>
+
+            {/* Print Header */}
+            <div className="hidden print:block text-center mb-8 border-b-2 border-slate-800 pb-4">
+                <div className="flex items-center justify-center gap-3 mb-2">
+                    <div className="p-2 bg-slate-900 text-white rounded-lg">
+                        <TrendingUp className="w-6 h-6" />
+                    </div>
+                    <h1 className="text-3xl font-bold text-slate-900 tracking-tight">BUKU CERDAS</h1>
+                </div>
+                <p className="text-slate-600 font-medium">Laporan Penjualan & Transaksi</p>
+                <p className="text-sm text-slate-500 mt-1">
+                    Periode: {new Date(startDate).toLocaleDateString("id-ID", { dateStyle: "long" })} - {new Date(endDate).toLocaleDateString("id-ID", { dateStyle: "long" })}
+                </p>
+            </div>
+
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 print-hidden">
                 <div>
                     <h2 className="text-3xl font-bold text-slate-800 bg-clip-text text-transparent bg-gradient-to-r from-amber-600 to-indigo-600">
                         Laporan Penjualan
@@ -74,7 +127,7 @@ export default function LaporanPage() {
             </div>
 
             {/* Filters */}
-            <div className="bg-white/80 backdrop-blur-xl p-6 rounded-2xl shadow-xl border border-white/20 flex flex-wrap items-center gap-4">
+            <div className="bg-white/80 backdrop-blur-xl p-6 rounded-2xl shadow-xl border border-white/20 flex flex-wrap items-center gap-4 print-hidden">
                 <div className="flex items-center gap-2 text-slate-600 font-medium">
                     <Calendar className="w-5 h-5 text-indigo-500" />
                     <span>Periode Laporan:</span>
@@ -207,7 +260,7 @@ export default function LaporanPage() {
                                 <h3 className="font-bold text-slate-800 text-lg">Rincian Transaksi</h3>
                                 <p className="text-sm text-slate-500">Daftar pesanan yang masuk dalam laporan ini</p>
                             </div>
-                            <button className="text-indigo-600 hover:text-indigo-700 text-sm font-medium flex items-center gap-1">
+                            <button className="text-indigo-600 hover:text-indigo-700 text-sm font-medium flex items-center gap-1 print-hidden">
                                 <Download className="w-4 h-4" /> Export CSV
                             </button>
                         </div>

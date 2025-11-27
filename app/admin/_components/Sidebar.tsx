@@ -68,16 +68,19 @@ export default function Sidebar() {
             </nav>
 
             <div className="p-6 border-t border-slate-800 bg-slate-900/50 backdrop-blur-sm">
-                <form
-                    action="/api/auth/logout"
-                    method="POST">
-                    <button
-                        type="submit"
-                        className="flex w-full items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-medium text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-all duration-200 group">
-                        <LogOut className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
-                        Keluar Aplikasi
-                    </button>
-                </form>
+                <button
+                    onClick={async () => {
+                        try {
+                            await fetch("/api/auth/logout", { method: "POST" });
+                            window.location.href = "/login";
+                        } catch (error) {
+                            console.error("Logout failed", error);
+                        }
+                    }}
+                    className="flex w-full items-center gap-3 px-4 py-3.5 rounded-xl text-sm font-medium text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-all duration-200 group">
+                    <LogOut className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
+                    Keluar
+                </button>
             </div>
         </aside>
     );
