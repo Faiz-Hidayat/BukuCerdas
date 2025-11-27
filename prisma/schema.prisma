@@ -1,0 +1,240 @@
+// Schema database BukuCerdas dengan penamaan Indonesia
+// Provider: MySQL (Laragon)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// Enum untuk role user
+enum Role {
+  admin
+  user
+}
+
+enum StatusAkun {
+  aktif
+  nonaktif
+  suspended
+}
+
+enum StatusPembayaran {
+  menunggu_konfirmasi
+  terkonfirmasi
+  dibatalkan
+}
+
+enum StatusPesanan {
+  diproses
+  dikirim
+  selesai
+  dibatalkan
+}
+
+enum MetodePembayaran {
+  cod
+  transfer_bank
+  ewallet
+  qris
+}
+
+enum TipeNotifikasi {
+  pesanan_baru
+  pembayaran_baru
+  pesanan_selesai
+}
+
+// Model User - Pengguna (admin dan user)
+model User {
+  idUser           Int              @id @default(autoincrement()) @map("id_user")
+  namaLengkap      String           @map("nama_lengkap") @db.VarChar(255)
+  username         String           @unique @db.VarChar(100)
+  email            String           @unique @db.VarChar(255)
+  kataSandiHash    String           @map("kata_sandi_hash") @db.VarChar(255)
+  role             Role             @default(user)
+  fotoProfilUrl    String?          @map("foto_profil_url") @db.VarChar(500)
+  nomorTelepon     String?          @map("nomor_telepon") @db.VarChar(20)
+  tanggalDaftar    DateTime         @default(now()) @map("tanggal_daftar")
+  statusAkun       StatusAkun       @default(aktif) @map("status_akun")
+  
+  // Relasi
+  alamatUser       AlamatUser[]
+  pesanan          Pesanan[]
+  ulasanBuku       UlasanBuku[]
+
+  @@map("user")
+}
+
+// Model Kategori Buku
+model KategoriBuku {
+  idKategori       Int              @id @default(autoincrement()) @map("id_kategori")
+  namaKategori     String           @map("nama_kategori") @db.VarChar(100)
+  deskripsi        String?          @db.Text
+  
+  // Relasi
+  buku             Buku[]
+
+  @@map("kategori_buku")
+}
+
+// Model Buku
+model Buku {
+  idBuku           Int              @id @default(autoincrement()) @map("id_buku")
+  idKategori       Int              @map("id_kategori")
+  judul            String           @db.VarChar(255)
+  pengarang        String           @db.VarChar(255)
+  penerbit         String           @db.VarChar(255)
+  tahunTerbit      Int              @map("tahun_terbit")
+  isbn             String?          @unique @db.VarChar(20)
+  stok             Int              @default(0)
+  harga            Decimal          @db.Decimal(10, 2)
+  sinopsis         String?          @db.Text
+  coverUrl         String?          @map("cover_url") @db.VarChar(500)
+  statusAktif      Boolean          @default(true) @map("status_aktif")
+  tanggalDibuat    DateTime         @default(now()) @map("tanggal_dibuat")
+  
+  // Relasi
+  kategoriBuku     KategoriBuku     @relation(fields: [idKategori], references: [idKategori])
+  detailPesanan    DetailPesanan[]
+  ulasanBuku       UlasanBuku[]
+
+  @@map("buku")
+  @@index([idKategori])
+}
+
+// Model Alamat User
+model AlamatUser {
+  idAlamat         Int              @id @default(autoincrement()) @map("id_alamat")
+  idUser           Int              @map("id_user")
+  namaPenerima     String           @map("nama_penerima") @db.VarChar(255)
+  nomorTelepon     String           @map("nomor_telepon") @db.VarChar(20)
+  kota             String           @db.VarChar(100)
+  provinsi         String           @db.VarChar(100)
+  alamatLengkap    String           @map("alamat_lengkap") @db.Text
+  kodePos          String           @map("kode_pos") @db.VarChar(10)
+  isDefault        Boolean          @default(false) @map("is_default")
+  
+  // Relasi
+  user             User             @relation(fields: [idUser], references: [idUser])
+  pesanan          Pesanan[]
+
+  @@map("alamat_user")
+  @@index([idUser])
+}
+
+// Model Pesanan
+model Pesanan {
+  idPesanan              Int                 @id @default(autoincrement()) @map("id_pesanan")
+  kodePesanan            String              @unique @map("kode_pesanan") @db.VarChar(50)
+  idUser                 Int                 @map("id_user")
+  idAlamat               Int                 @map("id_alamat")
+  tanggalPesan           DateTime            @default(now()) @map("tanggal_pesan")
+  metodePembayaran       MetodePembayaran    @map("metode_pembayaran")
+  statusPembayaran       StatusPembayaran    @default(menunggu_konfirmasi) @map("status_pembayaran")
+  statusPesanan          StatusPesanan       @default(diproses) @map("status_pesanan")
+  subtotal               Decimal             @db.Decimal(10, 2)
+  ongkir                 Decimal             @db.Decimal(10, 2)
+  pajakPersen            Decimal             @map("pajak_persen") @db.Decimal(5, 2)
+  pajakNominal           Decimal             @map("pajak_nominal") @db.Decimal(10, 2)
+  totalBayar             Decimal             @map("total_bayar") @db.Decimal(10, 2)
+  buktiPembayaranUrl     String?             @map("bukti_pembayaran_url") @db.VarChar(500)
+  
+  // Relasi
+  user                   User                @relation(fields: [idUser], references: [idUser])
+  alamatUser             AlamatUser          @relation(fields: [idAlamat], references: [idAlamat])
+  detailPesanan          DetailPesanan[]
+  notifikasiAdmin        NotifikasiAdmin[]
+
+  @@map("pesanan")
+  @@index([idUser])
+  @@index([idAlamat])
+}
+
+// Model Detail Pesanan
+model DetailPesanan {
+  idDetail         Int              @id @default(autoincrement()) @map("id_detail")
+  idPesanan        Int              @map("id_pesanan")
+  idBuku           Int              @map("id_buku")
+  jumlah           Int
+  hargaSatuan      Decimal          @map("harga_satuan") @db.Decimal(10, 2)
+  subtotal         Decimal          @db.Decimal(10, 2)
+  
+  // Relasi
+  pesanan          Pesanan          @relation(fields: [idPesanan], references: [idPesanan])
+  buku             Buku             @relation(fields: [idBuku], references: [idBuku])
+
+  @@map("detail_pesanan")
+  @@index([idPesanan])
+  @@index([idBuku])
+}
+
+// Model Ulasan Buku
+model UlasanBuku {
+  idUlasan         Int              @id @default(autoincrement()) @map("id_ulasan")
+  idBuku           Int              @map("id_buku")
+  idUser           Int              @map("id_user")
+  rating           Int              @db.TinyInt // 1-5
+  komentar         String?          @db.Text
+  tanggalUlasan    DateTime         @default(now()) @map("tanggal_ulasan")
+  
+  // Relasi
+  buku             Buku             @relation(fields: [idBuku], references: [idBuku])
+  user             User             @relation(fields: [idUser], references: [idUser])
+
+  @@map("ulasan_buku")
+  @@index([idBuku])
+  @@index([idUser])
+}
+
+// Model Notifikasi Admin
+model NotifikasiAdmin {
+  idNotifikasi     Int              @id @default(autoincrement()) @map("id_notifikasi")
+  idPesanan        Int?             @map("id_pesanan")
+  tipe             TipeNotifikasi
+  pesan            String           @db.Text
+  sudahDibaca      Boolean          @default(false) @map("sudah_dibaca")
+  tanggalNotifikasi DateTime        @default(now()) @map("tanggal_notifikasi")
+  
+  // Relasi
+  pesanan          Pesanan?         @relation(fields: [idPesanan], references: [idPesanan])
+
+  @@map("notifikasi_admin")
+  @@index([idPesanan])
+}
+
+// Model Pengaturan Toko
+model PengaturanToko {
+  idPengaturan     Int              @id @default(autoincrement()) @map("id_pengaturan")
+  pajakPersen      Decimal          @map("pajak_persen") @db.Decimal(5, 2)
+  nomorRekening    String?          @map("nomor_rekening") @db.VarChar(50)
+  nomorEwallet     String?          @map("nomor_ewallet") @db.VarChar(50)
+  qrisUrl          String?          @map("qris_url") @db.VarChar(500)
+
+  @@map("pengaturan_toko")
+}
+
+// Model Tarif Ongkir
+model TarifOngkir {
+  idTarif          Int              @id @default(autoincrement()) @map("id_tarif")
+  kotaTujuan       String           @map("kota_tujuan") @db.VarChar(100)
+  zona             String           @db.VarChar(50)
+  biayaOngkir      Decimal          @map("biaya_ongkir") @db.Decimal(10, 2)
+
+  @@map("tarif_ongkir")
+}
+
+// Model Pesan Kontak
+model PesanKontak {
+  idPesan          Int              @id @default(autoincrement()) @map("id_pesan")
+  namaLengkap      String           @map("nama_lengkap") @db.VarChar(255)
+  email            String           @db.VarChar(255)
+  subjek           String           @db.VarChar(255)
+  isiPesan         String           @map("isi_pesan") @db.Text
+  tanggalKirim     DateTime         @default(now()) @map("tanggal_kirim")
+
+  @@map("pesan_kontak")
+}
