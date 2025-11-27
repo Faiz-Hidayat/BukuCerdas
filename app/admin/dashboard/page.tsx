@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { LayoutDashboard, BookOpen, Users, ShoppingBag, DollarSign, Bell, TrendingUp, ArrowUpRight, Calendar } from "lucide-react";
 import { motion } from "framer-motion";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 interface DashboardData {
     kpi: {
@@ -139,29 +140,37 @@ export default function AdminDashboardPage() {
                             <p className="text-sm text-slate-500">Statistik penjualan 30 hari terakhir</p>
                         </div>
                     </div>
-                    <div className="h-72 flex items-end gap-3">
+                    <div className="h-72 w-full">
                         {data.salesChart.length > 0 ? (
-                            data.salesChart.map((item, index) => {
-                                const maxVal = Math.max(...data.salesChart.map((d) => d.total));
-                                const heightPercent = maxVal > 0 ? (item.total / maxVal) * 100 : 0;
-                                return (
-                                    <div
-                                        key={index}
-                                        className="flex-1 flex flex-col items-center gap-2 group h-full justify-end">
-                                        <div
-                                            className="w-full bg-amber-100 hover:bg-amber-500 transition-all duration-300 rounded-t-lg relative group-hover:shadow-lg group-hover:shadow-amber-500/30"
-                                            style={{ height: `${Math.max(heightPercent, 4)}%` }}>
-                                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block bg-slate-800 text-white text-xs px-3 py-1.5 rounded-lg whitespace-nowrap z-10 shadow-xl">
-                                                {formatCurrency(item.total)}
-                                                <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-800"></div>
-                                            </div>
-                                        </div>
-                                        <span className="text-[10px] text-slate-400 rotate-0 truncate w-full text-center font-medium">
-                                            {item.date.split(" ")[0]}
-                                        </span>
-                                    </div>
-                                );
-                            })
+                            <ResponsiveContainer width="100%" height="100%">
+                                <BarChart data={data.salesChart}>
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                                    <XAxis 
+                                        dataKey="date" 
+                                        axisLine={false}
+                                        tickLine={false}
+                                        tick={{ fill: '#94a3b8', fontSize: 12 }}
+                                        dy={10}
+                                    />
+                                    <YAxis 
+                                        axisLine={false}
+                                        tickLine={false}
+                                        tick={{ fill: '#94a3b8', fontSize: 12 }}
+                                        tickFormatter={(value) => `Rp${(value / 1000).toFixed(0)}k`}
+                                    />
+                                    <Tooltip 
+                                        cursor={{ fill: '#f8fafc' }}
+                                        contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                                        formatter={(value: number) => [formatCurrency(value), 'Total Penjualan']}
+                                    />
+                                    <Bar 
+                                        dataKey="total" 
+                                        fill="#f59e0b" 
+                                        radius={[4, 4, 0, 0]}
+                                        maxBarSize={50}
+                                    />
+                                </BarChart>
+                            </ResponsiveContainer>
                         ) : (
                             <div className="w-full h-full flex items-center justify-center text-slate-400 text-sm bg-slate-50 rounded-xl border border-dashed border-slate-200">
                                 Belum ada data penjualan
