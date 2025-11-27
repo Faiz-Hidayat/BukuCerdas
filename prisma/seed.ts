@@ -6,6 +6,17 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('🌱 Memulai seeding database BukuCerdas...');
 
+  // 0. Bersihkan data transaksional (agar tidak duplikat saat re-seed)
+  console.log('🧹 Membersihkan data lama...');
+  await prisma.detailPesanan.deleteMany();
+  await prisma.notifikasiAdmin.deleteMany();
+  await prisma.pesanan.deleteMany();
+  await prisma.alamatUser.deleteMany();
+  await prisma.ulasanBuku.deleteMany();
+  await prisma.pesanKontak.deleteMany();
+  await prisma.tarifOngkir.deleteMany();
+  console.log('✅ Data lama berhasil dibersihkan');
+
   // 1. Buat admin default
   console.log('👤 Membuat user admin...');
   const adminPassword = await bcrypt.hash('admin123', 10);
@@ -256,8 +267,10 @@ async function main() {
   ];
 
   for (const buku of bukuList) {
-    await prisma.buku.create({
-      data: buku,
+    await prisma.buku.upsert({
+      where: { isbn: buku.isbn },
+      update: buku,
+      create: buku,
     });
   }
 
@@ -293,6 +306,139 @@ async function main() {
     });
   }
   console.log(`✅ ${tarifOngkir.length} tarif ongkir berhasil dibuat`);
+
+  // 7. Buat alamat user
+  console.log('🏠 Membuat alamat user...');
+  const alamatUser = await prisma.alamatUser.create({
+    data: {
+      idUser: user1.idUser,
+      namaPenerima: 'John Doe',
+      nomorTelepon: '081298765432',
+      kota: 'Jakarta',
+      provinsi: 'DKI Jakarta',
+      alamatLengkap: 'Jl. Sudirman No. 123, Jakarta Pusat',
+      kodePos: '10220',
+      isDefault: true,
+    },
+  });
+  console.log('✅ Alamat user berhasil dibuat');
+
+  // 8. Buat pesanan contoh
+  console.log('🛍️ Membuat pesanan contoh...');
+  
+  // Pesanan 1: Selesai
+  const pesanan1 = await prisma.pesanan.create({
+    data: {
+      kodePesanan: 'ORD-20231101-001',
+      idUser: user1.idUser,
+      idAlamat: alamatUser.idAlamat,
+      tanggalPesan: new Date('2023-11-01T10:00:00Z'),
+      metodePembayaran: 'transfer_bank',
+      statusPembayaran: 'terkonfirmasi',
+      statusPesanan: 'selesai',
+      subtotal: 184000,
+      ongkir: 15000,
+      pajakPersen: 11,
+      pajakNominal: 20240,
+      totalBayar: 219240,
+      buktiPembayaranUrl: 'https://example.com/bukti1.jpg',
+      detailPesanan: {
+        create: [
+          {
+            idBuku: 1, // Laskar Pelangi
+            jumlah: 1,
+            hargaSatuan: 89000,
+            subtotal: 89000,
+          },
+          {
+            idBuku: 2, // Bumi Manusia
+            jumlah: 1,
+            hargaSatuan: 95000,
+            subtotal: 95000,
+          },
+        ],
+      },
+    },
+  });
+
+  // Pesanan 2: Diproses
+  const pesanan2 = await prisma.pesanan.create({
+    data: {
+      kodePesanan: 'ORD-20231105-002',
+      idUser: user1.idUser,
+      idAlamat: alamatUser.idAlamat,
+      tanggalPesan: new Date('2023-11-05T14:30:00Z'),
+      metodePembayaran: 'ewallet',
+      statusPembayaran: 'terkonfirmasi',
+      statusPesanan: 'diproses',
+      subtotal: 125000,
+      ongkir: 15000,
+      pajakPersen: 11,
+      pajakNominal: 13750,
+      totalBayar: 153750,
+      buktiPembayaranUrl: 'https://example.com/bukti2.jpg',
+      detailPesanan: {
+        create: [
+          {
+            idBuku: 3, // Sapiens
+            jumlah: 1,
+            hargaSatuan: 125000,
+            subtotal: 125000,
+          },
+        ],
+      },
+    },
+  });
+  console.log('✅ 2 pesanan berhasil dibuat');
+
+  // 9. Buat ulasan buku
+  console.log('⭐ Membuat ulasan buku...');
+  await prisma.ulasanBuku.create({
+    data: {
+      idBuku: 1, // Laskar Pelangi
+      idUser: user1.idUser,
+      rating: 5,
+      komentar: 'Buku yang sangat menginspirasi! Wajib baca.',
+      tanggalUlasan: new Date('2023-11-03T09:00:00Z'),
+    },
+  });
+  
+  await prisma.ulasanBuku.create({
+    data: {
+      idBuku: 2, // Bumi Manusia
+      idUser: user1.idUser,
+      rating: 5,
+      komentar: 'Karya sastra yang luar biasa. Pramoedya memang legenda.',
+      tanggalUlasan: new Date('2023-11-04T10:00:00Z'),
+    },
+  });
+  console.log('✅ Ulasan buku berhasil dibuat');
+
+  // 10. Buat notifikasi admin
+  console.log('🔔 Membuat notifikasi admin...');
+  await prisma.notifikasiAdmin.create({
+    data: {
+      idPesanan: pesanan2.idPesanan,
+      tipe: 'pesanan_baru',
+      pesan: `Pesanan baru #${pesanan2.kodePesanan} dari ${user1.namaLengkap}`,
+      sudahDibaca: false,
+      tanggalNotifikasi: new Date('2023-11-05T14:30:00Z'),
+    },
+  });
+  console.log('✅ Notifikasi admin berhasil dibuat');
+
+  // 11. Buat pesan kontak
+  console.log('✉️ Membuat pesan kontak...');
+  await prisma.pesanKontak.create({
+    data: {
+      namaLengkap: 'Budi Santoso',
+      email: 'budi@example.com',
+      subjek: 'Pertanyaan tentang stok buku',
+      isiPesan: 'Halo admin, apakah buku Harry Potter akan restock dalam waktu dekat?',
+      tanggalKirim: new Date('2023-11-06T08:00:00Z'),
+    },
+  });
+  console.log('✅ Pesan kontak berhasil dibuat');
 
   console.log('\n✨ Seeding selesai!');
   console.log('\n📝 Kredensial Login:');
