@@ -24,7 +24,7 @@ const StarRating: React.FC<{ rating: number }> = ({ rating }) => {
 
 const BestSellers: React.FC = () => {
   return (
-    <section id="katalog" className="py-24 bg-white relative">
+    <section id="katalog" className="py-16 lg:py-24 bg-white relative">
       <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent"></div>
       <div className="max-w-7xl mx-auto px-6 lg:px-8">
         <div className="text-center mb-16">

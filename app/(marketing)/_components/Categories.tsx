@@ -15,7 +15,7 @@ const categories = [
 
 const Categories: React.FC = () => {
   return (
-    <section className="py-20">
+    <section className="py-16 lg:py-20">
       <div className="max-w-7xl mx-auto px-6 lg:px-8">
         <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-4">
           <div>

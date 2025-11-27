@@ -32,7 +32,7 @@ export default function HomePage() {
         <Testimonials />
         
         {/* CTA Section */}
-        <section className="py-24 px-6">
+        <section className="py-16 lg:py-24 px-6">
           <div className="max-w-6xl mx-auto bg-slate-900 rounded-3xl overflow-hidden relative">
             {/* Grid Pattern Background */}
             <div className="absolute inset-0 opacity-10">

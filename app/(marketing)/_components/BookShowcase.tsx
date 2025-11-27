@@ -46,7 +46,7 @@ const BookShowcase: React.FC = () => {
       <div className="sticky top-0 h-screen w-full overflow-hidden flex flex-col perspective-1000">
         
         {/* Header Text */}
-        <div className="flex-none pt-24 pb-8 md:pt-32 md:pb-12 text-center z-20 px-4 relative pointer-events-none">
+        <div className="flex-none pt-20 pb-6 md:pt-24 md:pb-8 text-center z-20 px-4 relative pointer-events-none">
             <motion.div style={{ opacity: useTransform(scrollYProgress, [0, 0.15], [1, 0]) }}>
                 <h2 className="font-serif text-3xl md:text-5xl text-slate-800 mb-3">
                 The Anatomy of a <span className="italic text-amber-700">Masterpiece</span>

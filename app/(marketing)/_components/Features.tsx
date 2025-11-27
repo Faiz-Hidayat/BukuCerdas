@@ -13,7 +13,7 @@ const features = [
 
 const Features: React.FC = () => {
   return (
-    <section id="keunggulan" className="py-24 bg-white/50 border-y border-slate-100/50">
+    <section id="keunggulan" className="py-16 lg:py-24 bg-white/50 border-y border-slate-100/50">
       <div className="max-w-7xl mx-auto px-6 lg:px-8">
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
           {features.map((feature, index) => (
