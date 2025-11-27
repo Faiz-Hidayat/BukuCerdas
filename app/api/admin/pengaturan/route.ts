@@ -29,6 +29,11 @@ export async function PUT(request: Request) {
         const nomorEwallet = formData.get("nomorEwallet") as string;
         const qrisFile = formData.get("qrisImage") as File | null;
         const qrisUrlInput = formData.get("qrisUrl") as string;
+        
+        const aktifCOD = formData.get("aktifCOD") === 'true';
+        const aktifTransfer = formData.get("aktifTransfer") === 'true';
+        const aktifEwallet = formData.get("aktifEwallet") === 'true';
+        const aktifQRIS = formData.get("aktifQRIS") === 'true';
 
         let settings = await prisma.pengaturanToko.findFirst();
         if (!settings) {
@@ -50,6 +55,10 @@ export async function PUT(request: Request) {
                 nomorRekening,
                 nomorEwallet,
                 qrisUrl: finalQrisUrl,
+                aktifCOD,
+                aktifTransfer,
+                aktifEwallet,
+                aktifQRIS
             },
         });
 

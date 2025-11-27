@@ -206,6 +206,17 @@ model NotifikasiAdmin {
   @@index([idPesanan])
 }
 
+// Model Pengeluaran
+model Pengeluaran {
+  idPengeluaran    Int      @id @default(autoincrement()) @map("id_pengeluaran")
+  judul            String   @db.VarChar(255)
+  nominal          Decimal  @db.Decimal(10, 2)
+  keterangan       String?  @db.Text
+  tanggal          DateTime @default(now())
+
+  @@map("pengeluaran")
+}
+
 // Model Pengaturan Toko
 model PengaturanToko {
   idPengaturan     Int              @id @default(autoincrement()) @map("id_pengaturan")
@@ -213,6 +224,10 @@ model PengaturanToko {
   nomorRekening    String?          @map("nomor_rekening") @db.VarChar(50)
   nomorEwallet     String?          @map("nomor_ewallet") @db.VarChar(50)
   qrisUrl          String?          @map("qris_url") @db.VarChar(500)
+  aktifCOD         Boolean          @default(true) @map("aktif_cod")
+  aktifTransfer    Boolean          @default(true) @map("aktif_transfer")
+  aktifEwallet     Boolean          @default(true) @map("aktif_ewallet")
+  aktifQRIS        Boolean          @default(true) @map("aktif_qris")
 
   @@map("pengaturan_toko")
 }

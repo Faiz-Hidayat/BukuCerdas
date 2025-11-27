@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Save, Image as ImageIcon, CreditCard, Percent, Upload, CheckCircle2 } from "lucide-react";
+import { Save, Image as ImageIcon, CreditCard, Percent, Upload, CheckCircle2, ToggleLeft, ToggleRight } from "lucide-react";
 import Image from "next/image";
 import { motion } from "framer-motion";
 
@@ -14,6 +14,10 @@ export default function PengaturanPage() {
         nomorRekening: "",
         nomorEwallet: "",
         qrisUrl: "",
+        aktifCOD: true,
+        aktifTransfer: true,
+        aktifEwallet: true,
+        aktifQRIS: true,
     });
     const [qrisFile, setQrisFile] = useState<File | null>(null);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -32,6 +36,10 @@ export default function PengaturanPage() {
                     nomorRekening: data.nomorRekening || "",
                     nomorEwallet: data.nomorEwallet || "",
                     qrisUrl: data.qrisUrl || "",
+                    aktifCOD: data.aktifCOD ?? true,
+                    aktifTransfer: data.aktifTransfer ?? true,
+                    aktifEwallet: data.aktifEwallet ?? true,
+                    aktifQRIS: data.aktifQRIS ?? true,
                 });
                 setPreviewUrl(data.qrisUrl);
             }
@@ -60,6 +68,10 @@ export default function PengaturanPage() {
         data.append("nomorRekening", formData.nomorRekening);
         data.append("nomorEwallet", formData.nomorEwallet);
         data.append("qrisUrl", formData.qrisUrl);
+        data.append("aktifCOD", formData.aktifCOD.toString());
+        data.append("aktifTransfer", formData.aktifTransfer.toString());
+        data.append("aktifEwallet", formData.aktifEwallet.toString());
+        data.append("aktifQRIS", formData.aktifQRIS.toString());
 
         if (qrisFile) {
             data.append("qrisImage", qrisFile);
@@ -84,6 +96,25 @@ export default function PengaturanPage() {
             setSaving(false);
         }
     };
+
+    const ToggleSwitch = ({ label, checked, onChange }: { label: string, checked: boolean, onChange: (val: boolean) => void }) => (
+        <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-200">
+            <span className="font-medium text-slate-700">{label}</span>
+            <button
+                type="button"
+                onClick={() => onChange(!checked)}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 ${
+                    checked ? 'bg-indigo-600' : 'bg-slate-300'
+                }`}
+            >
+                <span
+                    className={`${
+                        checked ? 'translate-x-6' : 'translate-x-1'
+                    } inline-block h-4 w-4 transform rounded-full bg-white transition-transform`}
+                />
+            </button>
+        </div>
+    );
 
     if (loading) {
         return (
@@ -159,6 +190,30 @@ export default function PengaturanPage() {
                             </div>
 
                             <div className="space-y-6">
+                                {/* Payment Method Toggles */}
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+                                    <ToggleSwitch 
+                                        label="Cash On Delivery (COD)" 
+                                        checked={formData.aktifCOD} 
+                                        onChange={(val) => setFormData({...formData, aktifCOD: val})} 
+                                    />
+                                    <ToggleSwitch 
+                                        label="Transfer Bank" 
+                                        checked={formData.aktifTransfer} 
+                                        onChange={(val) => setFormData({...formData, aktifTransfer: val})} 
+                                    />
+                                    <ToggleSwitch 
+                                        label="E-Wallet" 
+                                        checked={formData.aktifEwallet} 
+                                        onChange={(val) => setFormData({...formData, aktifEwallet: val})} 
+                                    />
+                                    <ToggleSwitch 
+                                        label="QRIS" 
+                                        checked={formData.aktifQRIS} 
+                                        onChange={(val) => setFormData({...formData, aktifQRIS: val})} 
+                                    />
+                                </div>
+
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div>
                                         <label className="block text-sm font-medium text-slate-700 mb-2">Nomor Rekening Bank</label>
@@ -166,7 +221,8 @@ export default function PengaturanPage() {
                                             type="text"
                                             value={formData.nomorRekening}
                                             onChange={(e) => setFormData({ ...formData, nomorRekening: e.target.value })}
-                                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all"
+                                            disabled={!formData.aktifTransfer}
+                                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                                             placeholder="Contoh: BCA 1234567890 a.n. BukuCerdas"
                                         />
                                     </div>
@@ -176,7 +232,8 @@ export default function PengaturanPage() {
                                             type="text"
                                             value={formData.nomorEwallet}
                                             onChange={(e) => setFormData({ ...formData, nomorEwallet: e.target.value })}
-                                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all"
+                                            disabled={!formData.aktifEwallet}
+                                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                                             placeholder="Contoh: OVO/Gopay 081234567890"
                                         />
                                     </div>
@@ -184,7 +241,7 @@ export default function PengaturanPage() {
 
                                 <div className="pt-4 border-t border-slate-100">
                                     <label className="block text-sm font-medium text-slate-700 mb-4">QRIS Code (Scan Payment)</label>
-                                    <div className="flex flex-col sm:flex-row items-start gap-6">
+                                    <div className={`flex flex-col sm:flex-row items-start gap-6 ${!formData.aktifQRIS ? 'opacity-50 pointer-events-none' : ''}`}>
                                         <div className="w-40 h-40 bg-slate-100 rounded-2xl overflow-hidden relative border-2 border-dashed border-slate-300 shrink-0 group">
                                             {previewUrl ? (
                                                 <Image
