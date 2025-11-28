@@ -326,13 +326,20 @@ async function main() {
   // 8. Buat pesanan contoh
   console.log('🛍️ Membuat pesanan contoh...');
   
-  // Pesanan 1: Selesai
+  const today = new Date();
+  const daysAgo = (days: number) => {
+    const d = new Date();
+    d.setDate(d.getDate() - days);
+    return d;
+  };
+
+  // Pesanan 1: Selesai (Hari ini)
   const pesanan1 = await prisma.pesanan.create({
     data: {
-      kodePesanan: 'ORD-20231101-001',
+      kodePesanan: `ORD-${today.getFullYear()}${today.getMonth() + 1}${today.getDate()}-001`,
       idUser: user1.idUser,
       idAlamat: alamatUser.idAlamat,
-      tanggalPesan: new Date('2023-11-01T10:00:00Z'),
+      tanggalPesan: today,
       metodePembayaran: 'transfer_bank',
       statusPembayaran: 'terkonfirmasi',
       statusPesanan: 'selesai',
@@ -361,13 +368,13 @@ async function main() {
     },
   });
 
-  // Pesanan 2: Diproses
+  // Pesanan 2: Diproses (2 hari lalu)
   const pesanan2 = await prisma.pesanan.create({
     data: {
-      kodePesanan: 'ORD-20231105-002',
+      kodePesanan: `ORD-${daysAgo(2).getFullYear()}${daysAgo(2).getMonth() + 1}${daysAgo(2).getDate()}-002`,
       idUser: user1.idUser,
       idAlamat: alamatUser.idAlamat,
-      tanggalPesan: new Date('2023-11-05T14:30:00Z'),
+      tanggalPesan: daysAgo(2),
       metodePembayaran: 'ewallet',
       statusPembayaran: 'terkonfirmasi',
       statusPesanan: 'diproses',
@@ -389,7 +396,130 @@ async function main() {
       },
     },
   });
-  console.log('✅ 2 pesanan berhasil dibuat');
+
+  // Pesanan 3: Selesai (5 hari lalu)
+  await prisma.pesanan.create({
+    data: {
+      kodePesanan: `ORD-${daysAgo(5).getFullYear()}${daysAgo(5).getMonth() + 1}${daysAgo(5).getDate()}-003`,
+      idUser: user1.idUser,
+      idAlamat: alamatUser.idAlamat,
+      tanggalPesan: daysAgo(5),
+      metodePembayaran: 'transfer_bank',
+      statusPembayaran: 'terkonfirmasi',
+      statusPesanan: 'selesai',
+      subtotal: 95000,
+      ongkir: 15000,
+      pajakPersen: 11,
+      pajakNominal: 10450,
+      totalBayar: 120450,
+      buktiPembayaranUrl: 'https://example.com/bukti3.jpg',
+      detailPesanan: {
+        create: [
+          {
+            idBuku: 6, // Deep Work
+            jumlah: 1,
+            hargaSatuan: 95000,
+            subtotal: 95000,
+          },
+        ],
+      },
+    },
+  });
+
+  // Pesanan 4: Selesai (10 hari lalu)
+  await prisma.pesanan.create({
+    data: {
+      kodePesanan: `ORD-${daysAgo(10).getFullYear()}${daysAgo(10).getMonth() + 1}${daysAgo(10).getDate()}-004`,
+      idUser: user1.idUser,
+      idAlamat: alamatUser.idAlamat,
+      tanggalPesan: daysAgo(10),
+      metodePembayaran: 'transfer_bank',
+      statusPembayaran: 'terkonfirmasi',
+      statusPesanan: 'selesai',
+      subtotal: 109000,
+      ongkir: 15000,
+      pajakPersen: 11,
+      pajakNominal: 11990,
+      totalBayar: 135990,
+      buktiPembayaranUrl: 'https://example.com/bukti4.jpg',
+      detailPesanan: {
+        create: [
+          {
+            idBuku: 5, // Atomic Habits
+            jumlah: 1,
+            hargaSatuan: 109000,
+            subtotal: 109000,
+          },
+        ],
+      },
+    },
+  });
+
+  // Pesanan 5: Selesai (15 hari lalu)
+  await prisma.pesanan.create({
+    data: {
+      kodePesanan: `ORD-${daysAgo(15).getFullYear()}${daysAgo(15).getMonth() + 1}${daysAgo(15).getDate()}-005`,
+      idUser: user1.idUser,
+      idAlamat: alamatUser.idAlamat,
+      tanggalPesan: daysAgo(15),
+      metodePembayaran: 'ewallet',
+      statusPembayaran: 'terkonfirmasi',
+      statusPesanan: 'selesai',
+      subtotal: 213000,
+      ongkir: 20000,
+      pajakPersen: 11,
+      pajakNominal: 23430,
+      totalBayar: 256430,
+      buktiPembayaranUrl: 'https://example.com/bukti5.jpg',
+      detailPesanan: {
+        create: [
+          {
+            idBuku: 11, // Perahu Kertas
+            jumlah: 1,
+            hargaSatuan: 88000,
+            subtotal: 88000,
+          },
+          {
+            idBuku: 3, // Sapiens
+            jumlah: 1,
+            hargaSatuan: 125000,
+            subtotal: 125000,
+          },
+        ],
+      },
+    },
+  });
+
+  // Pesanan 6: Selesai (20 hari lalu)
+  await prisma.pesanan.create({
+    data: {
+      kodePesanan: `ORD-${daysAgo(20).getFullYear()}${daysAgo(20).getMonth() + 1}${daysAgo(20).getDate()}-006`,
+      idUser: user1.idUser,
+      idAlamat: alamatUser.idAlamat,
+      tanggalPesan: daysAgo(20),
+      metodePembayaran: 'transfer_bank',
+      statusPembayaran: 'terkonfirmasi',
+      statusPesanan: 'selesai',
+      subtotal: 75000,
+      ongkir: 15000,
+      pajakPersen: 11,
+      pajakNominal: 8250,
+      totalBayar: 98250,
+      buktiPembayaranUrl: 'https://example.com/bukti6.jpg',
+      detailPesanan: {
+        create: [
+          {
+            idBuku: 8, // Jangan Bersedih
+            jumlah: 1,
+            hargaSatuan: 75000,
+            subtotal: 75000,
+          },
+        ],
+      },
+    },
+  });
+
+  console.log('✅ 6 pesanan berhasil dibuat');
 
   // 9. Buat ulasan buku
   console.log('⭐ Membuat ulasan buku...');
@@ -399,7 +529,7 @@ async function main() {
       idUser: user1.idUser,
       rating: 5,
       komentar: 'Buku yang sangat menginspirasi! Wajib baca.',
-      tanggalUlasan: new Date('2023-11-03T09:00:00Z'),
+      tanggalUlasan: daysAgo(3),
     },
   });
   
@@ -409,7 +539,7 @@ async function main() {
       idUser: user1.idUser,
       rating: 5,
       komentar: 'Karya sastra yang luar biasa. Pramoedya memang legenda.',
-      tanggalUlasan: new Date('2023-11-04T10:00:00Z'),
+      tanggalUlasan: daysAgo(4),
     },
   });
   console.log('✅ Ulasan buku berhasil dibuat');
@@ -422,7 +552,7 @@ async function main() {
       tipe: 'pesanan_baru',
       pesan: `Pesanan baru #${pesanan2.kodePesanan} dari ${user1.namaLengkap}`,
       sudahDibaca: false,
-      tanggalNotifikasi: new Date('2023-11-05T14:30:00Z'),
+      tanggalNotifikasi: daysAgo(2),
     },
   });
   console.log('✅ Notifikasi admin berhasil dibuat');
@@ -435,7 +565,7 @@ async function main() {
       email: 'budi@example.com',
       subjek: 'Pertanyaan tentang stok buku',
       isiPesan: 'Halo admin, apakah buku Harry Potter akan restock dalam waktu dekat?',
-      tanggalKirim: new Date('2023-11-06T08:00:00Z'),
+      tanggalKirim: daysAgo(1),
     },
   });
   console.log('✅ Pesan kontak berhasil dibuat');

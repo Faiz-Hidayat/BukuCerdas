@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Bell, User, Search, Menu, X, CheckCircle, AlertCircle } from "lucide-react";
+import { Bell, User, Search, Menu, X, CheckCircle, AlertCircle, Book, ShoppingBag } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 interface Notifikasi {
     idNotifikasi: number;
@@ -21,6 +22,14 @@ export default function Topbar() {
     const [unreadCount, setUnreadCount] = useState(0);
     const [showNotif, setShowNotif] = useState(false);
     const notifRef = useRef<HTMLDivElement>(null);
+
+    // Search State
+    const [searchQuery, setSearchQuery] = useState("");
+    const [searchResults, setSearchResults] = useState<any>(null);
+    const [isSearching, setIsSearching] = useState(false);
+    const [showResults, setShowResults] = useState(false);
+    const searchRef = useRef<HTMLDivElement>(null);
+    const router = useRouter();
 
     const fetchNotifikasi = async () => {
         try {
@@ -48,10 +57,39 @@ export default function Topbar() {
             if (notifRef.current && !notifRef.current.contains(event.target as Node)) {
                 setShowNotif(false);
             }
+            if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+                setShowResults(false);
+            }
         }
         document.addEventListener("mousedown", handleClickOutside);
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
+
+    // Search Logic
+    useEffect(() => {
+        const delayDebounceFn = setTimeout(async () => {
+            if (searchQuery.trim().length > 0) {
+                setIsSearching(true);
+                try {
+                    const res = await fetch(`/api/admin/search?q=${encodeURIComponent(searchQuery)}`);
+                    if (res.ok) {
+                        const data = await res.json();
+                        setSearchResults(data.results);
+                        setShowResults(true);
+                    }
+                } catch (error) {
+                    console.error("Search failed", error);
+                } finally {
+                    setIsSearching(false);
+                }
+            } else {
+                setSearchResults(null);
+                setShowResults(false);
+            }
+        }, 500);
+
+        return () => clearTimeout(delayDebounceFn);
+    }, [searchQuery]);
 
     const handleMarkAsRead = async () => {
         if (unreadCount > 0) {
@@ -81,14 +119,112 @@ export default function Topbar() {
             </div>
 
             <div className="flex items-center gap-6">
-                {/* Search Bar (Visual Only) */}
-                <div className="hidden md:flex items-center bg-slate-100 rounded-full px-4 py-2.5 w-64 focus-within:ring-2 focus-within:ring-amber-500/20 transition-all">
-                    <Search className="w-4 h-4 text-slate-400" />
-                    <input
-                        type="text"
-                        placeholder="Cari sesuatu..."
-                        className="bg-transparent border-none outline-none text-sm ml-2 w-full text-slate-600 placeholder:text-slate-400"
-                    />
+                {/* Search Bar */}
+                <div className="relative hidden md:block" ref={searchRef}>
+                    <div className="flex items-center bg-slate-100 rounded-full px-4 py-2.5 w-64 focus-within:ring-2 focus-within:ring-amber-500/20 transition-all focus-within:w-80">
+                        <Search className="w-4 h-4 text-slate-400" />
+                        <input
+                            type="text"
+                            placeholder="Cari buku, user, pesanan..."
+                            className="bg-transparent border-none outline-none text-sm ml-2 w-full text-slate-600 placeholder:text-slate-400"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            onFocus={() => {
+                                if (searchResults) setShowResults(true);
+                            }}
+                        />
+                        {isSearching && (
+                            <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-amber-600 ml-2"></div>
+                        )}
+                    </div>
+
+                    <AnimatePresence>
+                        {showResults && searchResults && (
+                            <motion.div
+                                initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                                animate={{ opacity: 1, y: 0, scale: 1 }}
+                                exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                                transition={{ duration: 0.2 }}
+                                className="absolute right-0 mt-2 w-full min-w-[320px] bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden z-50 max-h-[500px] overflow-y-auto custom-scrollbar">
+                                
+                                {/* Buku Results */}
+                                {searchResults.buku && searchResults.buku.length > 0 && (
+                                    <div className="p-2">
+                                        <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider px-3 py-2">Buku</h4>
+                                        {searchResults.buku.map((buku: any) => (
+                                            <Link 
+                                                href={`/admin/buku`} // Assuming list page for now
+                                                key={buku.idBuku}
+                                                onClick={() => setShowResults(false)}
+                                                className="flex items-center gap-3 p-2 hover:bg-slate-50 rounded-lg transition-colors group">
+                                                <div className="w-8 h-10 bg-slate-200 rounded overflow-hidden flex-shrink-0">
+                                                    {buku.coverUrl ? (
+                                                        <img src={buku.coverUrl} alt={buku.judul} className="w-full h-full object-cover" />
+                                                    ) : (
+                                                        <div className="w-full h-full flex items-center justify-center text-slate-400"><Book size={12}/></div>
+                                                    )}
+                                                </div>
+                                                <div className="overflow-hidden">
+                                                    <p className="text-sm font-medium text-slate-700 truncate group-hover:text-amber-600">{buku.judul}</p>
+                                                    <p className="text-xs text-slate-500 truncate">{buku.pengarang}</p>
+                                                </div>
+                                            </Link>
+                                        ))}
+                                    </div>
+                                )}
+
+                                {/* User Results */}
+                                {searchResults.users && searchResults.users.length > 0 && (
+                                    <div className="p-2 border-t border-slate-50">
+                                        <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider px-3 py-2">User</h4>
+                                        {searchResults.users.map((user: any) => (
+                                            <Link 
+                                                href={`/admin/user`}
+                                                key={user.idUser}
+                                                onClick={() => setShowResults(false)}
+                                                className="flex items-center gap-3 p-2 hover:bg-slate-50 rounded-lg transition-colors group">
+                                                <div className="w-8 h-8 bg-slate-100 rounded-full flex items-center justify-center text-slate-500 flex-shrink-0">
+                                                    <User size={14} />
+                                                </div>
+                                                <div className="overflow-hidden">
+                                                    <p className="text-sm font-medium text-slate-700 truncate group-hover:text-amber-600">{user.namaLengkap}</p>
+                                                    <p className="text-xs text-slate-500 truncate">{user.email}</p>
+                                                </div>
+                                            </Link>
+                                        ))}
+                                    </div>
+                                )}
+
+                                {/* Pesanan Results */}
+                                {searchResults.pesanan && searchResults.pesanan.length > 0 && (
+                                    <div className="p-2 border-t border-slate-50">
+                                        <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider px-3 py-2">Pesanan</h4>
+                                        {searchResults.pesanan.map((pesanan: any) => (
+                                            <Link 
+                                                href={`/admin/pesanan/${pesanan.idPesanan}`}
+                                                key={pesanan.idPesanan}
+                                                onClick={() => setShowResults(false)}
+                                                className="flex items-center gap-3 p-2 hover:bg-slate-50 rounded-lg transition-colors group">
+                                                <div className="w-8 h-8 bg-amber-50 rounded-full flex items-center justify-center text-amber-600 flex-shrink-0">
+                                                    <ShoppingBag size={14} />
+                                                </div>
+                                                <div className="overflow-hidden">
+                                                    <p className="text-sm font-medium text-slate-700 truncate group-hover:text-amber-600">#{pesanan.kodePesanan}</p>
+                                                    <p className="text-xs text-slate-500 truncate">{pesanan.user.namaLengkap} • {pesanan.statusPesanan}</p>
+                                                </div>
+                                            </Link>
+                                        ))}
+                                    </div>
+                                )}
+
+                                {(!searchResults.buku?.length && !searchResults.users?.length && !searchResults.pesanan?.length) && (
+                                    <div className="p-8 text-center text-slate-500">
+                                        <p className="text-sm">Tidak ditemukan hasil untuk "{searchQuery}"</p>
+                                    </div>
+                                )}
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
                 </div>
 
                 <div
