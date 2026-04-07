@@ -1,9 +1,12 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, Suspense } from "react";
 import { Search, Eye, Filter, Package, CheckCircle, Clock, XCircle, Truck, Printer, Play } from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
+import { useRouter, useSearchParams } from "next/navigation";
+import Pagination from "../../_components/Pagination";
+import { toast } from 'sonner';
 
 interface Order {
     idPesanan: number;
@@ -18,41 +21,58 @@ interface Order {
     statusPesanan: string;
 }
 
-export default function PesananPage() {
+function PesananContent() {
+    const router = useRouter();
+    const searchParams = useSearchParams();
     const [orders, setOrders] = useState<Order[]>([]);
     const [loading, setLoading] = useState(true);
-    const [searchTerm, setSearchTerm] = useState("");
+    const [searchTerm, setSearchTerm] = useState(searchParams.get("search") || "");
     const [statusFilter, setStatusFilter] = useState("all");
     const [dateFilter, setDateFilter] = useState("");
+    const [currentPage, setCurrentPage] = useState(Number(searchParams.get("page")) || 1);
+    const [totalPages, setTotalPages] = useState(1);
 
-    useEffect(() => {
-        fetchOrders();
-    }, []);
-
-    const fetchOrders = async () => {
+    const fetchOrders = useCallback(async () => {
         try {
-            const res = await fetch("/api/admin/pesanan");
+            setLoading(true);
+            let url = `/api/admin/pesanan?page=${currentPage}&limit=10&search=${encodeURIComponent(searchTerm)}`;
+            if (statusFilter && statusFilter !== "all") {
+                url += `&status=${statusFilter}`;
+            }
+            const res = await fetch(url);
             if (res.ok) {
-                const data = await res.json();
-                setOrders(data);
+                const json = await res.json();
+                setOrders(json.data);
+                setTotalPages(json.pagination.totalPages);
             }
         } catch (error) {
             console.error("Failed to fetch orders", error);
         } finally {
             setLoading(false);
         }
-    };
+    }, [currentPage, searchTerm, statusFilter]);
+
+    useEffect(() => {
+        fetchOrders();
+    }, [fetchOrders]);
+
+    // Reset halaman ke 1 saat filter berubah
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchTerm, statusFilter, dateFilter]);
+
+    // Sinkronisasi URL dengan state pagination & search
+    useEffect(() => {
+        const params = new URLSearchParams();
+        if (currentPage > 1) params.set("page", String(currentPage));
+        if (searchTerm) params.set("search", searchTerm);
+        const qs = params.toString();
+        router.replace(`/admin/pesanan${qs ? `?${qs}` : ""}`);
+    }, [currentPage, searchTerm, router]);
 
     const filteredOrders = orders.filter((order) => {
-        const matchesSearch =
-            order.kodePesanan.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            order.user.namaLengkap.toLowerCase().includes(searchTerm.toLowerCase());
-
-        const matchesStatus = statusFilter === "all" || order.statusPesanan === statusFilter;
-        
         const matchesDate = !dateFilter || new Date(order.tanggalPesan).toISOString().split('T')[0] === dateFilter;
-
-        return matchesSearch && matchesStatus && matchesDate;
+        return matchesDate;
     });
 
     const formatCurrency = (val: string | number) => {
@@ -92,23 +112,29 @@ export default function PesananPage() {
     };
 
     const handleProcessOrder = async (id: number) => {
-        if (!confirm("Proses pesanan ini? Status akan diubah menjadi 'Diproses'.")) return;
-
-        try {
-            const res = await fetch(`/api/admin/pesanan/${id}`, {
-                method: "PUT",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ statusPesanan: "diproses" }),
-            });
-
-            if (res.ok) {
-                fetchOrders();
-            } else {
-                alert("Gagal memproses pesanan");
-            }
-        } catch (error) {
-            console.error("Error processing order", error);
-        }
+        toast("Proses pesanan ini? Status akan diubah menjadi 'Diproses'.", {
+            action: {
+                label: 'Proses',
+                onClick: async () => {
+                    try {
+                        const res = await fetch(`/api/admin/pesanan/${id}`, {
+                            method: "PUT",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ statusPesanan: "diproses" }),
+                        });
+                        if (res.ok) {
+                            fetchOrders();
+                            toast.success('Pesanan berhasil diproses');
+                        } else {
+                            toast.error("Gagal memproses pesanan");
+                        }
+                    } catch (error) {
+                        console.error("Error processing order", error);
+                    }
+                },
+            },
+            cancel: { label: 'Batal', onClick: () => {} },
+        });
     };
 
     const tabs = [
@@ -269,7 +295,19 @@ export default function PesananPage() {
                         </tbody>
                     </table>
                 </div>
+
+                <div className="p-6 border-t border-slate-100">
+                    <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
+                </div>
             </div>
         </div>
+    );
+}
+
+export default function PesananPage() {
+    return (
+        <Suspense fallback={<div className="flex items-center justify-center h-full">Memuat...</div>}>
+            <PesananContent />
+        </Suspense>
     );
 }

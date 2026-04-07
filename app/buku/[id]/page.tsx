@@ -1,11 +1,12 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import Navbar from '../../(marketing)/_components/Navbar';
 import Footer from '../../(marketing)/_components/Footer';
 import { Star, ShoppingCart, User, Calendar } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { toast } from 'sonner';
 
 interface Review {
   idUlasan: number;
@@ -38,6 +39,7 @@ interface BookDetail {
 
 export default function BookDetailPage() {
   const params = useParams();
+  const router = useRouter();
   const [book, setBook] = useState<BookDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'sinopsis' | 'detail' | 'ulasan'>('sinopsis');
@@ -76,16 +78,16 @@ export default function BookDetailPage() {
       });
 
       if (res.ok) {
-        alert('Ulasan berhasil dikirim!');
+        toast.success('Ulasan berhasil dikirim!');
         setCanReview(false);
         fetchBookDetail(book.idBuku.toString());
       } else {
         const data = await res.json();
-        alert(data.error || 'Gagal mengirim ulasan');
+        toast.error(data.error || 'Gagal mengirim ulasan');
       }
     } catch (error) {
       console.error('Error submitting review', error);
-      alert('Terjadi kesalahan');
+      toast.error('Terjadi kesalahan');
     } finally {
       setSubmittingReview(false);
     }
@@ -114,14 +116,14 @@ export default function BookDetailPage() {
         body: JSON.stringify({ idBuku: book.idBuku, jumlah: 1 }),
       });
       if (res.ok) {
-        alert('Berhasil ditambahkan ke keranjang');
-        window.location.reload();
+        toast.success('Berhasil ditambahkan ke keranjang');
+        router.refresh();
       } else {
         const data = await res.json();
         if (res.status === 401) {
-            window.location.href = '/login';
+            router.push('/login');
         } else {
-            alert(data.error || 'Gagal menambahkan ke keranjang');
+            toast.error(data.error || 'Gagal menambahkan ke keranjang');
         }
       }
     } catch (error) {

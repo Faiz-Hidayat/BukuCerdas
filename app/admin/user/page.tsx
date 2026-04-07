@@ -1,9 +1,12 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Search, User as UserIcon, Shield, ShieldOff, CheckCircle, XCircle, Mail, Calendar, MoreVertical, Plus, Edit, Trash2, X, Save, Lock } from "lucide-react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
+import Pagination from "../../_components/Pagination";
+import { toast } from 'sonner';
 
 interface User {
     idUser: number;
@@ -16,12 +19,17 @@ interface User {
     statusAkun: "aktif" | "nonaktif" | "suspended";
 }
 
-export default function UserPage() {
+function UserContent() {
+    const router = useRouter();
+    const searchParams = useSearchParams();
+
     const [users, setUsers] = useState<User[]>([]);
     const [loading, setLoading] = useState(true);
-    const [searchTerm, setSearchTerm] = useState("");
+    const [searchTerm, setSearchTerm] = useState(searchParams.get("search") || "");
     const [roleFilter, setRoleFilter] = useState("all");
     const [statusFilter, setStatusFilter] = useState("all");
+    const [currentPage, setCurrentPage] = useState(Number(searchParams.get("page")) || 1);
+    const [totalPages, setTotalPages] = useState(1);
     
     // Modal & Form State
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -36,61 +44,89 @@ export default function UserPage() {
     });
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    useEffect(() => {
-        fetchUsers();
-    }, []);
-
-    const fetchUsers = async () => {
+    const fetchUsers = useCallback(async () => {
+        setLoading(true);
         try {
-            const res = await fetch("/api/admin/user");
+            const res = await fetch(`/api/admin/user?page=${currentPage}&limit=10&search=${encodeURIComponent(searchTerm)}`);
             if (res.ok) {
-                const data = await res.json();
-                setUsers(data);
+                const json = await res.json();
+                setUsers(json.data);
+                setTotalPages(json.pagination.totalPages);
             }
         } catch (error) {
             console.error("Failed to fetch users", error);
         } finally {
             setLoading(false);
         }
-    };
+    }, [currentPage, searchTerm]);
+
+    useEffect(() => {
+        fetchUsers();
+    }, [fetchUsers]);
+
+    // Reset halaman saat filter berubah
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchTerm, roleFilter, statusFilter]);
+
+    // Sinkronisasi URL dengan state pagination
+    useEffect(() => {
+        const params = new URLSearchParams();
+        if (currentPage > 1) params.set("page", String(currentPage));
+        if (searchTerm) params.set("search", searchTerm);
+        const qs = params.toString();
+        router.replace(`/admin/user${qs ? `?${qs}` : ""}`);
+    }, [currentPage, searchTerm, router]);
 
     const handleStatusChange = async (id: number, currentStatus: string) => {
         const newStatus = currentStatus === "aktif" ? "nonaktif" : "aktif";
-        if (!confirm(`Ubah status user menjadi ${newStatus}?`)) return;
-
-        try {
-            const res = await fetch(`/api/admin/user/${id}`, {
-                method: "PUT",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ statusAkun: newStatus }),
-            });
-
-            if (res.ok) {
-                fetchUsers();
-            } else {
-                alert("Gagal mengubah status user");
-            }
-        } catch (error) {
-            console.error("Error updating user status", error);
-        }
+        toast(`Ubah status user menjadi ${newStatus}?`, {
+            action: {
+                label: 'Ubah',
+                onClick: async () => {
+                    try {
+                        const res = await fetch(`/api/admin/user/${id}`, {
+                            method: "PUT",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ statusAkun: newStatus }),
+                        });
+                        if (res.ok) {
+                            fetchUsers();
+                            toast.success('Status user berhasil diubah');
+                        } else {
+                            toast.error("Gagal mengubah status user");
+                        }
+                    } catch (error) {
+                        console.error("Error updating user status", error);
+                    }
+                },
+            },
+            cancel: { label: 'Batal', onClick: () => {} },
+        });
     };
 
     const handleDelete = async (id: number) => {
-        if (!confirm("Apakah Anda yakin ingin menghapus user ini? Data yang dihapus tidak dapat dikembalikan.")) return;
-
-        try {
-            const res = await fetch(`/api/admin/user/${id}`, {
-                method: "DELETE",
-            });
-
-            if (res.ok) {
-                fetchUsers();
-            } else {
-                alert("Gagal menghapus user");
-            }
-        } catch (error) {
-            console.error("Error deleting user", error);
-        }
+        toast('Yakin ingin menghapus user ini? Data yang dihapus tidak dapat dikembalikan.', {
+            action: {
+                label: 'Hapus',
+                onClick: async () => {
+                    try {
+                        const res = await fetch(`/api/admin/user/${id}`, {
+                            method: "DELETE",
+                        });
+                        if (res.ok) {
+                            fetchUsers();
+                            toast.success('User berhasil dihapus');
+                        } else {
+                            toast.error("Gagal menghapus user");
+                        }
+                    } catch (error) {
+                        console.error("Error deleting user", error);
+                    }
+                },
+            },
+            cancel: { label: 'Batal', onClick: () => {} },
+        });
     };
 
     const openModal = (user: User | null = null) => {
@@ -143,13 +179,14 @@ export default function UserPage() {
             if (res.ok) {
                 fetchUsers();
                 closeModal();
+                toast.success('Data user berhasil disimpan');
             } else {
                 const errorData = await res.json();
-                alert(errorData.error || "Gagal menyimpan data user");
+                toast.error(errorData.error || "Gagal menyimpan data user");
             }
         } catch (error) {
             console.error("Error saving user", error);
-            alert("Terjadi kesalahan saat menyimpan data");
+            toast.error("Terjadi kesalahan saat menyimpan data");
         } finally {
             setIsSubmitting(false);
         }
@@ -157,15 +194,10 @@ export default function UserPage() {
 
     const filteredUsers = users.filter(
         (u) => {
-            const matchesSearch = 
-                u.namaLengkap.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                u.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                u.username.toLowerCase().includes(searchTerm.toLowerCase());
-            
             const matchesRole = roleFilter === "all" || u.role === roleFilter;
             const matchesStatus = statusFilter === "all" || u.statusAkun === statusFilter;
 
-            return matchesSearch && matchesRole && matchesStatus;
+            return matchesRole && matchesStatus;
         }
     );
 
@@ -387,6 +419,8 @@ export default function UserPage() {
                         </tbody>
                     </table>
                 </div>
+
+                <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
             </div>
 
             {/* Modal Form */}
@@ -524,5 +558,13 @@ export default function UserPage() {
                 )}
             </AnimatePresence>
         </div>
+    );
+}
+
+export default function UserPage() {
+    return (
+        <Suspense fallback={<div className="flex items-center justify-center h-full">Memuat...</div>}>
+            <UserContent />
+        </Suspense>
     );
 }

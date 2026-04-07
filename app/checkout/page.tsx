@@ -1,11 +1,30 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import Script from 'next/script';
 import Navbar from '../(marketing)/_components/Navbar';
 import Footer from '../(marketing)/_components/Footer';
 import { MapPin, CreditCard, Truck, CheckCircle, Plus } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { toast } from 'sonner';
+
+// Midtrans Snap global type
+declare global {
+  interface Window {
+    snap?: {
+      pay: (
+        token: string,
+        callbacks: {
+          onSuccess?: (result: unknown) => void;
+          onPending?: (result: unknown) => void;
+          onError?: (result: unknown) => void;
+          onClose?: () => void;
+        }
+      ) => void;
+    };
+  }
+}
 
 interface Address {
   idAlamat: number;
@@ -151,9 +170,80 @@ export default function CheckoutPage() {
     }
   };
 
+  // Midtrans Snap: buka popup pembayaran
+  const openMidtransSnap = useCallback(async (idPesanan: number) => {
+    try {
+      const res = await fetch('/api/payment/midtrans', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ idPesanan }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        toast.error(err.error || 'Gagal membuat token pembayaran');
+        router.push(`/pesanan-saya/${idPesanan}`);
+        return;
+      }
+
+      const { snapToken } = await res.json();
+
+      if (!window.snap) {
+        toast.error('Midtrans Snap belum siap, silakan coba lagi');
+        router.push(`/pesanan-saya/${idPesanan}`);
+        return;
+      }
+
+      // Helper: panggil check-status API untuk sinkronisasi status setelah Snap ditutup
+      const syncPaymentStatus = async () => {
+        try {
+          const checkRes = await fetch('/api/payment/midtrans/check-status', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ idPesanan }),
+          });
+          if (checkRes.ok) {
+            const result = await checkRes.json();
+            return result;
+          }
+        } catch (e) {
+          console.error('Error syncing payment status:', e);
+        }
+        return null;
+      };
+
+      window.snap.pay(snapToken, {
+        onSuccess: async () => {
+          await syncPaymentStatus();
+          toast.success('Pembayaran berhasil!');
+          router.push(`/pesanan-saya/${idPesanan}`);
+        },
+        onPending: async () => {
+          await syncPaymentStatus();
+          toast.info('Pembayaran pending, silakan selesaikan pembayaran');
+          router.push(`/pesanan-saya/${idPesanan}`);
+        },
+        onError: async () => {
+          await syncPaymentStatus();
+          toast.error('Pembayaran gagal');
+          router.push(`/pesanan-saya/${idPesanan}`);
+        },
+        onClose: async () => {
+          await syncPaymentStatus();
+          toast.info('Pembayaran belum selesai. Anda bisa melanjutkan nanti.');
+          router.push(`/pesanan-saya/${idPesanan}`);
+        },
+      });
+    } catch (error) {
+      console.error('Error opening Midtrans Snap:', error);
+      toast.error('Terjadi kesalahan saat membuka pembayaran');
+      router.push(`/pesanan-saya/${idPesanan}`);
+    }
+  }, [router]);
+
   const handleCheckout = async () => {
     if (!selectedAddressId) {
-      alert('Silakan pilih alamat pengiriman');
+      toast.error('Silakan pilih alamat pengiriman');
       return;
     }
     setProcessing(true);
@@ -169,14 +259,20 @@ export default function CheckoutPage() {
       
       if (res.ok) {
         const data = await res.json();
-        router.push(`/pesanan-saya/${data.idPesanan}`);
+
+        // Jika metode e-wallet/qris → buka Midtrans Snap popup
+        if (data.metodePembayaran === 'ewallet' || data.metodePembayaran === 'qris') {
+          await openMidtransSnap(data.idPesanan);
+        } else {
+          router.push(`/pesanan-saya/${data.idPesanan}`);
+        }
       } else {
         const data = await res.json();
-        alert(data.error || 'Gagal memproses pesanan');
+        toast.error(data.error || 'Gagal memproses pesanan');
       }
     } catch (error) {
       console.error('Error checkout', error);
-      alert('Terjadi kesalahan saat checkout');
+      toast.error('Terjadi kesalahan saat checkout');
     } finally {
       setProcessing(false);
     }
@@ -203,8 +299,19 @@ export default function CheckoutPage() {
     );
   }
 
+  // URL Midtrans Snap JS
+  const midtransScriptUrl = process.env.NEXT_PUBLIC_MIDTRANS_IS_PRODUCTION === 'true'
+    ? 'https://app.midtrans.com/snap/snap.js'
+    : 'https://app.sandbox.midtrans.com/snap/snap.js';
+
   return (
     <div className="min-h-screen bg-[#FDFBF7]">
+      {/* Load Midtrans Snap JS */}
+      <Script
+        src={midtransScriptUrl}
+        data-client-key={process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY || ''}
+        strategy="lazyOnload"
+      />
       <Navbar />
       
       <div className="pt-24 pb-12 px-6 lg:px-8 max-w-7xl mx-auto">

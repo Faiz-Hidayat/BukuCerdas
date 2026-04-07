@@ -1,11 +1,13 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { getPaginationParams, paginationMeta } from '@/lib/pagination';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const search = searchParams.get('search');
   const category = searchParams.get('category');
   const sort = searchParams.get('sort'); // 'terbaru', 'terlaris', 'termurah'
+  const { page, limit, skip } = getPaginationParams(searchParams);
 
   const where: any = {
     statusAktif: true,
@@ -31,19 +33,24 @@ export async function GET(request: Request) {
   }
 
   try {
-    const books = await prisma.buku.findMany({
-      where,
-      orderBy,
-      include: {
-        kategoriBuku: true,
-        _count: {
-          select: { ulasanBuku: true },
+    const [books, total] = await Promise.all([
+      prisma.buku.findMany({
+        where,
+        orderBy,
+        skip,
+        take: limit,
+        include: {
+          kategoriBuku: true,
+          _count: {
+            select: { ulasanBuku: true },
+          },
+          ulasanBuku: {
+            select: { rating: true },
+          },
         },
-        ulasanBuku: {
-          select: { rating: true },
-        },
-      },
-    });
+      }),
+      prisma.buku.count({ where }),
+    ]);
 
     // Calculate average rating
     const booksWithRating = books.map((book) => {
@@ -53,7 +60,7 @@ export async function GET(request: Request) {
       return { ...rest, rating: avgRating };
     });
 
-    return NextResponse.json(booksWithRating);
+    return NextResponse.json({ data: booksWithRating, pagination: paginationMeta(total, page, limit) });
   } catch (error) {
     console.error('Error fetching books:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });

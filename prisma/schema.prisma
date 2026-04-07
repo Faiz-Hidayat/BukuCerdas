@@ -30,11 +30,13 @@ enum StatusPembayaran {
 }
 
 enum StatusPesanan {
-  menunggu_konfirmasi
-  diproses
-  dikirim
-  selesai
-  dibatalkan
+  menunggu_pembayaran    // Transfer/Midtrans: belum bayar
+  menunggu_verifikasi    // Transfer: bukti sudah upload, admin belum cek
+  menunggu_konfirmasi    // Backward compat
+  diproses               // Pembayaran dikonfirmasi, sedang diproses
+  dikirim                // Sedang dikirim
+  selesai                // Pesanan selesai
+  dibatalkan             // Dibatalkan
 }
 
 enum MetodePembayaran {
@@ -177,6 +179,9 @@ model Pesanan {
   pajakNominal           Decimal             @map("pajak_nominal") @db.Decimal(10, 2)
   totalBayar             Decimal             @map("total_bayar") @db.Decimal(10, 2)
   buktiPembayaranUrl     String?             @map("bukti_pembayaran_url") @db.VarChar(500)
+  resi                   String?             @db.VarChar(50)
+  midtransOrderId        String?             @unique @map("midtrans_order_id") @db.VarChar(100)
+  alamatSnapshot         String?             @map("alamat_snapshot") @db.Text
   
   // Relasi
   user                   User                @relation(fields: [idUser], references: [idUser])

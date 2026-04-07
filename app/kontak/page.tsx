@@ -5,6 +5,7 @@ import Navbar from '../(marketing)/_components/Navbar';
 import Footer from '../(marketing)/_components/Footer';
 import { Mail, Phone, MapPin, Send, MessageCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { toast } from 'sonner';
 
 export default function KontakPage() {
   const [formData, setFormData] = useState({
@@ -32,15 +33,14 @@ export default function KontakPage() {
       });
 
       if (res.ok) {
-        setSuccess(true);
+        toast.success('Pesan berhasil terkirim!');
         setFormData({ nama: '', email: '', subjek: '', pesan: '' });
-        setTimeout(() => setSuccess(false), 5000);
       } else {
-        alert('Gagal mengirim pesan. Silakan coba lagi.');
+        toast.error('Gagal mengirim pesan. Silakan coba lagi.');
       }
     } catch (error) {
       console.error('Error sending message:', error);
-      alert('Terjadi kesalahan.');
+      toast.error('Terjadi kesalahan.');
     } finally {
       setLoading(false);
     }

@@ -4,6 +4,8 @@ import React, { useState, useEffect } from "react";
 import { Save, Image as ImageIcon, CreditCard, Percent, Upload, CheckCircle2, ToggleLeft, ToggleRight } from "lucide-react";
 import Image from "next/image";
 import { motion } from "framer-motion";
+import { toast } from 'sonner';
+import { compressImage } from '../../../lib/image-compress';
 
 export default function PengaturanPage() {
     const [loading, setLoading] = useState(true);
@@ -50,11 +52,17 @@ export default function PengaturanPage() {
         }
     };
 
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
-            setQrisFile(file);
-            setPreviewUrl(URL.createObjectURL(file));
+            try {
+                // H2: Compress gambar sebelum set
+                const compressed = await compressImage(file);
+                setQrisFile(compressed);
+                setPreviewUrl(URL.createObjectURL(compressed));
+            } catch (err: any) {
+                toast.error(err.message || 'Gagal mengkompresi gambar');
+            }
         }
     };
 
@@ -84,11 +92,10 @@ export default function PengaturanPage() {
             });
 
             if (res.ok) {
-                setSuccess(true);
+                toast.success('Pengaturan berhasil disimpan');
                 fetchSettings();
-                setTimeout(() => setSuccess(false), 3000);
             } else {
-                alert("Gagal menyimpan pengaturan");
+                toast.error("Gagal menyimpan pengaturan");
             }
         } catch (error) {
             console.error("Error saving settings", error);

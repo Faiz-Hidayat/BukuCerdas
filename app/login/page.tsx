@@ -125,11 +125,6 @@ function LoginForm() {
         </Link>
       </div>
 
-      <div className="mt-8 pt-6 border-t border-slate-100">
-        <p className="text-xs text-slate-500 text-center">
-          Demo: admin/admin123 (Admin) atau johndoe/user123 (User)
-        </p>
-      </div>
     </div>
   );
 }

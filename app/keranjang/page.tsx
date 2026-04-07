@@ -2,10 +2,12 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import Navbar from '../(marketing)/_components/Navbar';
 import Footer from '../(marketing)/_components/Footer';
 import { Trash2, Plus, Minus, ShoppingBag, ArrowRight } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { toast } from 'sonner';
 
 interface CartItem {
   idItem: number;
@@ -20,6 +22,7 @@ interface CartItem {
 }
 
 export default function KeranjangPage() {
+  const router = useRouter();
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState<number | null>(null);
@@ -68,14 +71,14 @@ export default function KeranjangPage() {
   };
 
   const removeItem = async (idItem: number) => {
-    if (!confirm('Apakah Anda yakin ingin menghapus item ini?')) return;
     try {
       const res = await fetch(`/api/keranjang/${idItem}`, {
         method: 'DELETE',
       });
       if (res.ok) {
         setCartItems((prev) => prev.filter((item) => item.idItem !== idItem));
-        window.location.reload(); // Update navbar count
+        toast.success('Item berhasil dihapus dari keranjang');
+        router.refresh();
       }
     } catch (error) {
       console.error('Error removing item', error);
@@ -171,7 +174,7 @@ export default function KeranjangPage() {
                           </div>
                           
                           <button
-                            onClick={() => removeItem(item.idItem)}
+                            onClick={() => toast('Yakin hapus item ini?', { action: { label: 'Hapus', onClick: () => removeItem(item.idItem) }, cancel: { label: 'Batal', onClick: () => {} } })}
                             className="text-slate-400 hover:text-red-500 transition-colors p-2"
                             title="Hapus Item"
                           >

@@ -97,6 +97,18 @@ export async function getCurrentUser(): Promise<JwtPayload | null> {
 }
 
 /**
+ * Mengecek apakah user saat ini adalah admin.
+ * Throw error jika tidak login atau bukan admin.
+ * Digunakan di awal setiap API admin route.
+ */
+export async function requireAdmin(): Promise<JwtPayload> {
+  const user = await getCurrentUser();
+  if (!user) throw new Error('UNAUTHORIZED');
+  if (user.role !== 'admin') throw new Error('FORBIDDEN');
+  return user;
+}
+
+/**
  * Cek apakah user adalah admin
  */
 export async function isAdmin(): Promise<boolean> {

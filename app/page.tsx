@@ -1,4 +1,5 @@
 import React from 'react';
+import Link from 'next/link';
 import Navbar from './(marketing)/_components/Navbar';
 import Hero from './(marketing)/_components/Hero';
 import Features from './(marketing)/_components/Features';
@@ -54,12 +55,12 @@ export default function HomePage() {
                 Daftar sekarang dan dapatkan diskon 20% untuk pembelian pertama Anda. Gratis ongkir ke seluruh Jabodetabek.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <button className="bg-white text-slate-900 px-8 py-4 rounded-full font-semibold hover:bg-amber-50 transition-all duration-300 hover:shadow-lg transform hover:-translate-y-1">
+                <Link href="/register" className="bg-white text-slate-900 px-8 py-4 rounded-full font-semibold hover:bg-amber-50 transition-all duration-300 hover:shadow-lg transform hover:-translate-y-1">
                   Daftar Gratis
-                </button>
-                <button className="px-8 py-4 rounded-full font-semibold text-white border border-slate-600 hover:bg-slate-800 transition-all duration-300">
+                </Link>
+                <Link href="/katalog" className="px-8 py-4 rounded-full font-semibold text-white border border-slate-600 hover:bg-slate-800 transition-all duration-300">
                   Lihat Promo
-                </button>
+                </Link>
               </div>
             </div>
           </div>

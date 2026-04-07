@@ -19,7 +19,7 @@ export default function Sidebar() {
     const pathname = usePathname();
 
     return (
-        <aside className="w-72 bg-slate-900 text-white h-screen fixed left-0 top-0 flex flex-col z-30 shadow-2xl">
+        <aside data-sidebar className="w-72 bg-slate-900 text-white h-screen fixed left-0 top-0 flex flex-col z-30 shadow-2xl print:hidden">
             <div className="p-8 border-b border-slate-800">
                 <Link
                     href="/admin/dashboard"

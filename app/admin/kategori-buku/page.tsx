@@ -1,8 +1,11 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Plus, Edit, Trash2, X, Search, Tag } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import Pagination from "../../_components/Pagination";
+import { toast } from 'sonner';
 
 interface Category {
     idKategori: number;
@@ -13,31 +16,46 @@ interface Category {
     };
 }
 
-export default function KategoriBukuPage() {
+function KategoriBukuContent() {
+    const router = useRouter();
+    const searchParams = useSearchParams();
     const [categories, setCategories] = useState<Category[]>([]);
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingCategory, setEditingCategory] = useState<Category | null>(null);
     const [formData, setFormData] = useState({ namaKategori: "", deskripsi: "" });
-    const [searchTerm, setSearchTerm] = useState("");
+    const [searchTerm, setSearchTerm] = useState(searchParams.get("search") || "");
+    const [currentPage, setCurrentPage] = useState(Number(searchParams.get("page")) || 1);
+    const [totalPages, setTotalPages] = useState(1);
 
-    useEffect(() => {
-        fetchCategories();
-    }, []);
-
-    const fetchCategories = async () => {
+    const fetchCategories = useCallback(async () => {
         try {
-            const res = await fetch("/api/admin/kategori-buku");
+            setLoading(true);
+            const res = await fetch(`/api/admin/kategori-buku?page=${currentPage}&limit=10&search=${encodeURIComponent(searchTerm)}`);
             if (res.ok) {
-                const data = await res.json();
-                setCategories(data);
+                const json = await res.json();
+                setCategories(json.data);
+                setTotalPages(json.pagination.totalPages);
             }
         } catch (error) {
             console.error("Failed to fetch categories", error);
         } finally {
             setLoading(false);
         }
-    };
+    }, [currentPage, searchTerm]);
+
+    useEffect(() => {
+        fetchCategories();
+    }, [fetchCategories]);
+
+    // Sync URL params
+    useEffect(() => {
+        const params = new URLSearchParams();
+        if (currentPage > 1) params.set("page", String(currentPage));
+        if (searchTerm) params.set("search", searchTerm);
+        const qs = params.toString();
+        router.replace(`/admin/kategori-buku${qs ? `?${qs}` : ""}`);
+    }, [currentPage, searchTerm, router]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -56,7 +74,7 @@ export default function KategoriBukuPage() {
                 fetchCategories();
                 closeModal();
             } else {
-                alert("Gagal menyimpan kategori");
+                toast.error("Gagal menyimpan kategori");
             }
         } catch (error) {
             console.error("Error saving category", error);
@@ -64,22 +82,28 @@ export default function KategoriBukuPage() {
     };
 
     const handleDelete = async (id: number) => {
-        if (!confirm("Apakah Anda yakin ingin menghapus kategori ini?")) return;
-
-        try {
-            const res = await fetch(`/api/admin/kategori-buku/${id}`, {
-                method: "DELETE",
-            });
-
-            if (res.ok) {
-                fetchCategories();
-            } else {
-                const data = await res.json();
-                alert(data.error || "Gagal menghapus kategori");
-            }
-        } catch (error) {
-            console.error("Error deleting category", error);
-        }
+        toast('Yakin ingin menghapus kategori ini?', {
+            action: {
+                label: 'Hapus',
+                onClick: async () => {
+                    try {
+                        const res = await fetch(`/api/admin/kategori-buku/${id}`, {
+                            method: "DELETE",
+                        });
+                        if (res.ok) {
+                            fetchCategories();
+                            toast.success('Kategori berhasil dihapus');
+                        } else {
+                            const data = await res.json();
+                            toast.error(data.error || "Gagal menghapus kategori");
+                        }
+                    } catch (error) {
+                        console.error("Error deleting category", error);
+                    }
+                },
+            },
+            cancel: { label: 'Batal', onClick: () => {} },
+        });
     };
 
     const openModal = (category?: Category) => {
@@ -102,7 +126,7 @@ export default function KategoriBukuPage() {
         setFormData({ namaKategori: "", deskripsi: "" });
     };
 
-    const filteredCategories = categories.filter((c) => c.namaKategori.toLowerCase().includes(searchTerm.toLowerCase()));
+
 
     return (
         <div className="space-y-8">
@@ -129,7 +153,7 @@ export default function KategoriBukuPage() {
                             type="text"
                             placeholder="Cari kategori..."
                             value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
+                            onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
                             className="w-full pl-12 pr-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all bg-white"
                         />
                     </div>
@@ -175,8 +199,8 @@ export default function KategoriBukuPage() {
                                         </td>
                                     </tr>
                                 ))
-                            ) : filteredCategories.length > 0 ? (
-                                filteredCategories.map((category) => (
+                            ) : categories.length > 0 ? (
+                                categories.map((category) => (
                                     <tr
                                         key={category.idKategori}
                                         className="hover:bg-slate-50/80 transition-colors group">
@@ -230,6 +254,8 @@ export default function KategoriBukuPage() {
                         </tbody>
                     </table>
                 </div>
+
+                <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
             </div>
 
             <AnimatePresence>
@@ -297,5 +323,13 @@ export default function KategoriBukuPage() {
                 )}
             </AnimatePresence>
         </div>
+    );
+}
+
+export default function KategoriBukuPage() {
+    return (
+        <Suspense fallback={<div className="flex items-center justify-center h-full">Memuat...</div>}>
+            <KategoriBukuContent />
+        </Suspense>
     );
 }

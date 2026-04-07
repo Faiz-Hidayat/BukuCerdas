@@ -51,3 +51,29 @@ html {
 ::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
 }
+
+/* Print styles — sembunyikan sidebar, topbar, dan reset layout saat cetak invoice */
+@media print {
+  body {
+    background: white !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Sembunyikan sidebar & topbar admin */
+  nav, aside, header,
+  [data-sidebar], [data-topbar] {
+    display: none !important;
+  }
+
+  /* Reset padding main content admin */
+  main {
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  /* Reset min-height & bg parent layout */
+  .min-h-screen {
+    min-height: auto !important;
+  }
+}

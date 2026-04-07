@@ -312,7 +312,26 @@ export default function LaporanPage() {
                                 <h3 className="font-bold text-slate-800 text-lg">Riwayat Transaksi</h3>
                                 <p className="text-sm text-slate-500">Daftar lengkap pemasukan dan pengeluaran</p>
                             </div>
-                            <button className="text-indigo-600 hover:text-indigo-700 text-sm font-medium flex items-center gap-1 print-hidden">
+                            <button 
+                                onClick={() => {
+                                    if (!data) return;
+                                    const header = 'Tanggal,Jenis,Keterangan,Kode Ref,Nominal\n';
+                                    const rows = data.transactions.map(trx => {
+                                        const date = new Date(trx.date).toLocaleDateString('id-ID');
+                                        const jenis = trx.type === 'pemasukan' ? 'Pemasukan' : 'Pengeluaran';
+                                        const desc = trx.description.replace(/,/g, ' ');
+                                        const sign = trx.type === 'pemasukan' ? '' : '-';
+                                        return `${date},${jenis},${desc},${trx.refCode},${sign}${trx.amount}`;
+                                    }).join('\n');
+                                    const blob = new Blob([header + rows], { type: 'text/csv;charset=utf-8;' });
+                                    const url = URL.createObjectURL(blob);
+                                    const a = document.createElement('a');
+                                    a.href = url;
+                                    a.download = `laporan-${startDate}-${endDate}.csv`;
+                                    a.click();
+                                    URL.revokeObjectURL(url);
+                                }}
+                                className="text-indigo-600 hover:text-indigo-700 text-sm font-medium flex items-center gap-1 print-hidden">
                                 <Download className="w-4 h-4" /> Export CSV
                             </button>
                         </div>

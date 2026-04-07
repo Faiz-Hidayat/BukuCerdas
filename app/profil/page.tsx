@@ -5,6 +5,8 @@ import Navbar from '../(marketing)/_components/Navbar';
 import Footer from '../(marketing)/_components/Footer';
 import { User, MapPin, Camera, Save, Trash2, Plus, CheckCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { toast } from 'sonner';
+import { compressImage } from '../../lib/image-compress';
 
 interface UserData {
   namaLengkap: string;
@@ -93,11 +95,16 @@ export default function ProfilPage() {
     }
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      setSelectedFile(file);
-      setPreviewUrl(URL.createObjectURL(file));
+      try {
+        // H2: Compress gambar sebelum set
+        const compressed = await compressImage(e.target.files[0]);
+        setSelectedFile(compressed);
+        setPreviewUrl(URL.createObjectURL(compressed));
+      } catch (err: any) {
+        toast.error(err.message || 'Gagal mengkompresi gambar');
+      }
     }
   };
 
@@ -120,10 +127,12 @@ export default function ProfilPage() {
       });
 
       if (res.ok) {
-        alert('Profil berhasil diperbarui');
-        window.location.reload();
+        toast.success('Profil berhasil diperbarui');
+        setSelectedFile(null);
+        setPreviewUrl(null);
+        fetchData();
       } else {
-        alert('Gagal memperbarui profil');
+        toast.error('Gagal memperbarui profil');
       }
     } catch (error) {
       console.error('Error updating profile', error);
@@ -162,17 +171,25 @@ export default function ProfilPage() {
   };
 
   const handleDeleteAddress = async (id: number) => {
-    if (!confirm('Hapus alamat ini?')) return;
-    try {
-      const res = await fetch(`/api/user/alamat/${id}`, {
-        method: 'DELETE',
-      });
-      if (res.ok) {
-        setAddresses(addresses.filter(a => a.idAlamat !== id));
-      }
-    } catch (error) {
-      console.error('Error deleting address', error);
-    }
+    toast('Hapus alamat ini?', {
+      action: {
+        label: 'Hapus',
+        onClick: async () => {
+          try {
+            const res = await fetch(`/api/user/alamat/${id}`, {
+              method: 'DELETE',
+            });
+            if (res.ok) {
+              setAddresses(addresses.filter(a => a.idAlamat !== id));
+              toast.success('Alamat berhasil dihapus');
+            }
+          } catch (error) {
+            console.error('Error deleting address', error);
+          }
+        },
+      },
+      cancel: { label: 'Batal', onClick: () => {} },
+    });
   };
 
   const handleSetDefaultAddress = async (id: number) => {

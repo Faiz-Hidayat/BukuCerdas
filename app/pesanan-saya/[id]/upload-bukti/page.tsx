@@ -5,6 +5,8 @@ import { useParams, useRouter } from 'next/navigation';
 import Navbar from '../../../(marketing)/_components/Navbar';
 import Footer from '../../../(marketing)/_components/Footer';
 import { Upload, ArrowLeft, Image as ImageIcon } from 'lucide-react';
+import { toast } from 'sonner';
+import { compressImage } from '../../../../lib/image-compress';
 
 export default function UploadBuktiPage() {
   const params = useParams();
@@ -27,24 +29,34 @@ export default function UploadBuktiPage() {
 
     setUploading(true);
     try {
-      const formData = new FormData();
-      formData.append('buktiPembayaran', file);
+      // H2: Compress gambar sebelum upload
+      let fileToUpload = file;
+      try {
+        fileToUpload = await compressImage(file);
+      } catch (compressError: any) {
+        toast.error(compressError.message || 'Gagal mengkompresi gambar');
+        setUploading(false);
+        return;
+      }
 
-      const res = await fetch(`/api/pesanan/${params.id}/bukti-pembayaran`, {
+      const formData = new FormData();
+      formData.append('buktiPembayaran', fileToUpload);
+
+      const res = await fetch(`/api/user/pesanan/${params.id}/upload-bukti`, {
         method: 'POST',
         body: formData,
       });
 
       if (res.ok) {
-        alert('Bukti pembayaran berhasil diupload');
+        toast.success('Bukti pembayaran berhasil diupload');
         router.push(`/pesanan-saya/${params.id}`);
       } else {
         const data = await res.json();
-        alert(data.error || 'Gagal mengupload bukti pembayaran');
+        toast.error(data.error || 'Gagal mengupload bukti pembayaran');
       }
     } catch (error) {
       console.error('Error uploading proof', error);
-      alert('Terjadi kesalahan saat upload');
+      toast.error('Terjadi kesalahan saat upload');
     } finally {
       setUploading(false);
     }

@@ -1,13 +1,19 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { kontakSchema } from '@/lib/validations/kontak';
 
 export async function POST(request: Request) {
   try {
-    const { namaLengkap, email, subjek, isiPesan } = await request.json();
+    const body = await request.json();
 
-    if (!namaLengkap || !email || !subjek || !isiPesan) {
-      return NextResponse.json({ error: 'Data tidak lengkap' }, { status: 400 });
+    // Validasi input dengan Zod
+    const parsed = kontakSchema.safeParse(body);
+    if (!parsed.success) {
+      const errors = parsed.error.issues.map(e => e.message).join(', ');
+      return NextResponse.json({ error: errors }, { status: 400 });
     }
+
+    const { namaLengkap, email, subjek, isiPesan } = parsed.data;
 
     await prisma.pesanKontak.create({
       data: {

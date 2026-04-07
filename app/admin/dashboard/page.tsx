@@ -1,8 +1,9 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { LayoutDashboard, BookOpen, Users, ShoppingBag, DollarSign, Bell, TrendingUp, ArrowUpRight, Calendar } from "lucide-react";
+import { LayoutDashboard, BookOpen, Users, ShoppingBag, DollarSign, Bell, TrendingUp, ArrowUpRight, Calendar, Clock } from "lucide-react";
 import { motion } from "framer-motion";
+import Link from "next/link";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 interface DashboardData {
@@ -11,6 +12,8 @@ interface DashboardData {
         totalUser: number;
         totalPesananHariIni: number;
         pendapatanBulanIni: number;
+        pendapatanHariIni: number;
+        pesananMenunggu: number;
     };
     salesChart: { date: string; total: number }[];
     notifikasi: any[];
@@ -95,7 +98,7 @@ export default function AdminDashboardPage() {
             </motion.div>
 
             {/* KPI Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <KpiCard
                     title="Total Buku"
                     value={data.kpi.totalBuku}
@@ -117,13 +120,32 @@ export default function AdminDashboardPage() {
                     gradient="from-amber-500 to-amber-600"
                     shadow="shadow-amber-500/20"
                 />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <KpiCard
+                    title="Pendapatan Hari Ini"
+                    value={formatCurrency(data.kpi.pendapatanHariIni)}
+                    icon={DollarSign}
+                    gradient="from-teal-500 to-teal-600"
+                    shadow="shadow-teal-500/20"
+                />
                 <KpiCard
                     title="Pendapatan Bulan Ini"
                     value={formatCurrency(data.kpi.pendapatanBulanIni)}
-                    icon={DollarSign}
+                    icon={TrendingUp}
                     gradient="from-violet-500 to-violet-600"
                     shadow="shadow-violet-500/20"
                 />
+                <Link href="/admin/pesanan">
+                    <KpiCard
+                        title="Pesanan Menunggu"
+                        value={data.kpi.pesananMenunggu}
+                        icon={Clock}
+                        gradient="from-rose-500 to-rose-600"
+                        shadow="shadow-rose-500/20"
+                    />
+                </Link>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -228,9 +250,9 @@ export default function AdminDashboardPage() {
                         <h3 className="font-bold text-lg text-slate-800">Pesanan Terbaru</h3>
                         <p className="text-sm text-slate-500">5 transaksi terakhir yang masuk</p>
                     </div>
-                    <button className="text-sm font-medium text-amber-600 hover:text-amber-700 flex items-center gap-1">
+                    <Link href="/admin/pesanan" className="text-sm font-medium text-amber-600 hover:text-amber-700 flex items-center gap-1">
                         Lihat Semua <ArrowUpRight className="w-4 h-4" />
-                    </button>
+                    </Link>
                 </div>
                 <div className="overflow-x-auto">
                     <table className="w-full text-sm text-left">

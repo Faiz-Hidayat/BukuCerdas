@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter, Libre_Baskerville } from "next/font/google";
+import { Toaster } from 'sonner';
 import "./globals.css";
 
 const inter = Inter({
@@ -33,6 +34,7 @@ export default function RootLayout({
     <html lang="id" className={`${inter.variable} ${libreBaskerville.variable}`}>
       <body className="font-sans antialiased">
         {children}
+        <Toaster position="top-right" richColors closeButton />
       </body>
     </html>
   );

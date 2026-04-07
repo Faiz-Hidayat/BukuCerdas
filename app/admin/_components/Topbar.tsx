@@ -111,7 +111,7 @@ export default function Topbar() {
     };
 
     return (
-        <header className="h-20 bg-white/80 backdrop-blur-md border-b border-slate-200/60 fixed top-0 right-0 left-72 z-20 flex items-center justify-between px-8 transition-all duration-300">
+        <header data-topbar className="h-20 bg-white/80 backdrop-blur-md border-b border-slate-200/60 fixed top-0 right-0 left-72 z-20 flex items-center justify-between px-8 transition-all duration-300 print:hidden">
             <div className="flex items-center gap-4">
                 <h1 className="text-xl font-bold text-slate-800 tracking-tight">
                     Dashboard <span className="text-amber-600">Admin</span>

@@ -1,11 +1,14 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Search, Filter, ShoppingCart, Star } from 'lucide-react';
 import Navbar from '../(marketing)/_components/Navbar';
 import Footer from '../(marketing)/_components/Footer';
+import Pagination from '../_components/Pagination';
 import { motion } from 'framer-motion';
+import { toast } from 'sonner';
 
 interface Book {
   idBuku: number;
@@ -27,13 +30,17 @@ interface Category {
   namaKategori: string;
 }
 
-export default function KatalogPage() {
+function KatalogContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [books, setBooks] = useState<Book[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('');
-  const [sortBy, setSortBy] = useState('terbaru');
+  const [search, setSearch] = useState(searchParams.get('search') || '');
+  const [selectedCategory, setSelectedCategory] = useState(searchParams.get('category') || '');
+  const [sortBy, setSortBy] = useState(searchParams.get('sort') || 'terbaru');
+  const [currentPage, setCurrentPage] = useState(Number(searchParams.get('page') || '1'));
+  const [totalPages, setTotalPages] = useState(1);
 
   useEffect(() => {
     fetchCategories();
@@ -41,11 +48,19 @@ export default function KatalogPage() {
 
   useEffect(() => {
     fetchBooks();
-  }, [search, selectedCategory, sortBy]);
+    // Update URL tanpa reload
+    const params = new URLSearchParams();
+    if (search) params.set('search', search);
+    if (selectedCategory) params.set('category', selectedCategory);
+    if (sortBy && sortBy !== 'terbaru') params.set('sort', sortBy);
+    if (currentPage > 1) params.set('page', currentPage.toString());
+    const qs = params.toString();
+    router.replace(`/katalog${qs ? `?${qs}` : ''}`, { scroll: false });
+  }, [search, selectedCategory, sortBy, currentPage]);
 
   const fetchCategories = async () => {
     try {
-      const res = await fetch('/api/admin/kategori-buku');
+      const res = await fetch('/api/kategori-buku');
       if (res.ok) {
         const data = await res.json();
         setCategories(data);
@@ -62,11 +77,14 @@ export default function KatalogPage() {
       if (search) params.append('search', search);
       if (selectedCategory) params.append('category', selectedCategory);
       if (sortBy) params.append('sort', sortBy);
+      params.append('page', currentPage.toString());
+      params.append('limit', '12');
 
       const res = await fetch(`/api/buku?${params.toString()}`);
       if (res.ok) {
-        const data = await res.json();
-        setBooks(data);
+        const json = await res.json();
+        setBooks(json.data);
+        setTotalPages(json.pagination.totalPages);
       }
     } catch (error) {
       console.error('Error fetching books', error);
@@ -83,14 +101,14 @@ export default function KatalogPage() {
         body: JSON.stringify({ idBuku, jumlah: 1 }),
       });
       if (res.ok) {
-        alert('Berhasil ditambahkan ke keranjang');
-        window.location.reload();
+        toast.success('Berhasil ditambahkan ke keranjang');
+        router.refresh();
       } else {
         const data = await res.json();
         if (res.status === 401) {
-            window.location.href = '/login';
+            router.push('/login');
         } else {
-            alert(data.error || 'Gagal menambahkan ke keranjang');
+            toast.error(data.error || 'Gagal menambahkan ke keranjang');
         }
       }
     } catch (error) {
@@ -115,7 +133,7 @@ export default function KatalogPage() {
                 placeholder="Cari judul atau pengarang..."
                 className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
               />
             </div>
             
@@ -123,7 +141,7 @@ export default function KatalogPage() {
               <select
                 className="px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 bg-white"
                 value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
+                onChange={(e) => { setSelectedCategory(e.target.value); setCurrentPage(1); }}
               >
                 <option value="">Semua Kategori</option>
                 {categories.map((cat) => (
@@ -136,7 +154,7 @@ export default function KatalogPage() {
               <select
                 className="px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 bg-white"
                 value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
+                onChange={(e) => { setSortBy(e.target.value); setCurrentPage(1); }}
               >
                 <option value="terbaru">Terbaru</option>
                 <option value="termurah">Termurah</option>
@@ -215,9 +233,19 @@ export default function KatalogPage() {
             <p className="text-slate-500">Tidak ada buku yang ditemukan.</p>
           </div>
         )}
+
+        <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
       </div>
       
       <Footer />
     </div>
+  );
+}
+
+export default function KatalogPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Memuat...</div>}>
+      <KatalogContent />
+    </Suspense>
   );
 }

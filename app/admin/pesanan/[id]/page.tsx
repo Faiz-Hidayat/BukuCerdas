@@ -6,6 +6,7 @@ import { ArrowLeft, Printer, CheckCircle, XCircle, Truck, Package } from "lucide
 import Image from "next/image";
 import Link from "next/link";
 import Invoice from "./Invoice";
+import { toast } from 'sonner';
 
 interface OrderDetail {
     idPesanan: number;
@@ -83,23 +84,29 @@ export default function DetailPesananPage() {
 
     const updateStatus = async (field: "statusPembayaran" | "statusPesanan", value: string) => {
         if (!order) return;
-        if (!confirm(`Ubah status menjadi ${value}?`)) return;
-
-        try {
-            const res = await fetch(`/api/admin/pesanan/${order.idPesanan}`, {
-                method: "PUT",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ [field]: value }),
-            });
-
-            if (res.ok) {
-                fetchOrder(order.idPesanan.toString());
-            } else {
-                alert("Gagal mengupdate status");
-            }
-        } catch (error) {
-            console.error("Error updating status", error);
-        }
+        toast(`Ubah status menjadi ${value}?`, {
+            action: {
+                label: 'Ubah',
+                onClick: async () => {
+                    try {
+                        const res = await fetch(`/api/admin/pesanan/${order.idPesanan}`, {
+                            method: "PUT",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ [field]: value }),
+                        });
+                        if (res.ok) {
+                            fetchOrder(order.idPesanan.toString());
+                            toast.success('Status berhasil diubah');
+                        } else {
+                            toast.error("Gagal mengupdate status");
+                        }
+                    } catch (error) {
+                        console.error("Error updating status", error);
+                    }
+                },
+            },
+            cancel: { label: 'Batal', onClick: () => {} },
+        });
     };
 
     const formatCurrency = (val: string | number) => {

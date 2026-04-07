@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth';
-import { saveFile } from '@/lib/upload';
+import { saveFile, validateUploadFile, deleteOldFile } from '@/lib/upload';
 
 export async function PUT(request: Request) {
   try {
@@ -25,6 +25,14 @@ export async function PUT(request: Request) {
     };
 
     if (fotoProfil && fotoProfil.size > 0) {
+      // Validasi file upload (H1, H3, H4)
+      const uploadError = validateUploadFile(fotoProfil);
+      if (uploadError) {
+        return NextResponse.json({ error: uploadError }, { status: 400 });
+      }
+      // H6: Hapus foto lama
+      const currentUser = await prisma.user.findUnique({ where: { idUser: user.idUser }, select: { fotoProfilUrl: true } });
+      await deleteOldFile(currentUser?.fotoProfilUrl);
       const url = await saveFile(fotoProfil, 'profil');
       data.fotoProfilUrl = url;
     }

@@ -1,9 +1,12 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { saveFile } from "@/lib/upload";
+import { saveFile, validateUploadFile, deleteOldFile } from "@/lib/upload";
+import { requireAdmin } from "@/lib/auth";
 
 export async function GET() {
     try {
+        const admin = await requireAdmin();
+
         let settings = await prisma.pengaturanToko.findFirst();
         if (!settings) {
             settings = await prisma.pengaturanToko.create({
@@ -16,13 +19,19 @@ export async function GET() {
             });
         }
         return NextResponse.json(settings);
-    } catch (error) {
+    } catch (error: any) {
+        if (error.message === 'UNAUTHORIZED')
+            return NextResponse.json({ error: 'Silakan login' }, { status: 401 });
+        if (error.message === 'FORBIDDEN')
+            return NextResponse.json({ error: 'Akses ditolak' }, { status: 403 });
         return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
     }
 }
 
 export async function PUT(request: Request) {
     try {
+        const admin = await requireAdmin();
+
         const formData = await request.formData();
         const pajakPersen = parseFloat(formData.get("pajakPersen") as string);
         const nomorRekening = formData.get("nomorRekening") as string;
@@ -45,6 +54,13 @@ export async function PUT(request: Request) {
         let finalQrisUrl = qrisUrlInput || settings.qrisUrl;
 
         if (qrisFile && qrisFile.size > 0) {
+            // Validasi file upload (H1, H3, H4)
+            const uploadError = validateUploadFile(qrisFile);
+            if (uploadError) {
+                return NextResponse.json({ error: uploadError }, { status: 400 });
+            }
+            // H6: Hapus QRIS lama
+            await deleteOldFile(settings.qrisUrl);
             finalQrisUrl = await saveFile(qrisFile, "qris");
         }
 
@@ -63,7 +79,11 @@ export async function PUT(request: Request) {
         });
 
         return NextResponse.json(updated);
-    } catch (error) {
+    } catch (error: any) {
+        if (error.message === 'UNAUTHORIZED')
+            return NextResponse.json({ error: 'Silakan login' }, { status: 401 });
+        if (error.message === 'FORBIDDEN')
+            return NextResponse.json({ error: 'Akses ditolak' }, { status: 403 });
         console.error("Error updating settings:", error);
         return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
     }

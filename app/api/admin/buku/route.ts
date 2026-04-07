@@ -1,30 +1,52 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { saveFile } from "@/lib/upload";
+import { saveFile, validateUploadFile } from "@/lib/upload";
+import { requireAdmin } from "@/lib/auth";
+import { bukuSchema } from "@/lib/validations/buku";
+import { getPaginationParams, paginationMeta } from "@/lib/pagination";
 
-export async function GET() {
+export async function GET(request: Request) {
     try {
-        const books = await prisma.buku.findMany({
-            where: { statusAktif: true }, // Or show all? Admin usually wants to see all.
-            // Let's show all but maybe filter by status in UI.
-            // Actually, soft delete usually means we keep it but mark as inactive.
-            // The prompt says "DELETE (soft-delete via status_aktif)".
-            // So GET should probably return all, or maybe just active ones by default?
-            // Admin needs to see inactive ones to restore them or edit them.
-            // I'll return all.
-            orderBy: { tanggalDibuat: "desc" },
-            include: {
-                kategoriBuku: true,
-            },
-        });
-        return NextResponse.json(books);
-    } catch (error) {
+        const admin = await requireAdmin();
+
+        const { searchParams } = new URL(request.url);
+        const search = searchParams.get('search');
+        const { page, limit, skip } = getPaginationParams(searchParams);
+
+        const where: any = {};
+        if (search) {
+            where.OR = [
+                { judul: { contains: search } },
+                { pengarang: { contains: search } },
+            ];
+        }
+
+        const [books, total] = await Promise.all([
+            prisma.buku.findMany({
+                where,
+                orderBy: { tanggalDibuat: "desc" },
+                skip,
+                take: limit,
+                include: {
+                    kategoriBuku: true,
+                },
+            }),
+            prisma.buku.count({ where }),
+        ]);
+        return NextResponse.json({ data: books, pagination: paginationMeta(total, page, limit) });
+    } catch (error: any) {
+        if (error.message === 'UNAUTHORIZED')
+            return NextResponse.json({ error: 'Silakan login' }, { status: 401 });
+        if (error.message === 'FORBIDDEN')
+            return NextResponse.json({ error: 'Akses ditolak' }, { status: 403 });
         return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
     }
 }
 
 export async function POST(request: Request) {
     try {
+        const admin = await requireAdmin();
+
         const formData = await request.formData();
 
         const judul = formData.get("judul") as string;
@@ -39,13 +61,25 @@ export async function POST(request: Request) {
         const coverFile = formData.get("coverImage") as File | null;
         const coverUrlInput = formData.get("coverUrl") as string;
 
-        if (!judul || !pengarang || !harga || !idKategori) {
-            return NextResponse.json({ error: "Data wajib belum lengkap" }, { status: 400 });
+        // Validasi dengan Zod (B3, B4, B7)
+        const parsed = bukuSchema.safeParse({
+            judul, pengarang, penerbit, tahunTerbit, harga, stok, idKategori,
+            sinopsis: sinopsis || undefined,
+            isbn: isbn || undefined,
+        });
+        if (!parsed.success) {
+            const errors = parsed.error.issues.map(e => e.message).join(', ');
+            return NextResponse.json({ error: errors }, { status: 400 });
         }
 
         let finalCoverUrl = coverUrlInput || null;
 
         if (coverFile && coverFile.size > 0) {
+            // Validasi file upload (H1, H3, H4)
+            const uploadError = validateUploadFile(coverFile);
+            if (uploadError) {
+                return NextResponse.json({ error: uploadError }, { status: 400 });
+            }
             finalCoverUrl = await saveFile(coverFile, "cover-buku");
         }
 
@@ -66,7 +100,11 @@ export async function POST(request: Request) {
         });
 
         return NextResponse.json(book, { status: 201 });
-    } catch (error) {
+    } catch (error: any) {
+        if (error.message === 'UNAUTHORIZED')
+            return NextResponse.json({ error: 'Silakan login' }, { status: 401 });
+        if (error.message === 'FORBIDDEN')
+            return NextResponse.json({ error: 'Akses ditolak' }, { status: 403 });
         console.error("Error creating book:", error);
         return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
     }

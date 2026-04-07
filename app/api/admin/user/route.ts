@@ -1,30 +1,59 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import * as bcrypt from 'bcryptjs';
+import { requireAdmin } from "@/lib/auth";
+import { getPaginationParams, paginationMeta } from "@/lib/pagination";
 
-export async function GET() {
+export async function GET(request: Request) {
     try {
-        const users = await prisma.user.findMany({
-            orderBy: { tanggalDaftar: "desc" },
-            select: {
-                idUser: true,
-                namaLengkap: true,
-                username: true,
-                email: true,
-                role: true,
-                fotoProfilUrl: true,
-                tanggalDaftar: true,
-                statusAkun: true,
-            },
-        });
-        return NextResponse.json(users);
-    } catch (error) {
+        const admin = await requireAdmin();
+
+        const { searchParams } = new URL(request.url);
+        const search = searchParams.get('search');
+        const { page, limit, skip } = getPaginationParams(searchParams);
+
+        const where: any = {};
+        if (search) {
+            where.OR = [
+                { namaLengkap: { contains: search } },
+                { email: { contains: search } },
+                { username: { contains: search } },
+            ];
+        }
+
+        const [users, total] = await Promise.all([
+            prisma.user.findMany({
+                where,
+                orderBy: { tanggalDaftar: "desc" },
+                skip,
+                take: limit,
+                select: {
+                    idUser: true,
+                    namaLengkap: true,
+                    username: true,
+                    email: true,
+                    role: true,
+                    fotoProfilUrl: true,
+                    tanggalDaftar: true,
+                    statusAkun: true,
+                },
+            }),
+            prisma.user.count({ where }),
+        ]);
+        return NextResponse.json({ data: users, pagination: paginationMeta(total, page, limit) });
+    } catch (error: any) {
+        if (error.message === 'UNAUTHORIZED')
+            return NextResponse.json({ error: 'Silakan login' }, { status: 401 });
+        if (error.message === 'FORBIDDEN')
+            return NextResponse.json({ error: 'Akses ditolak' }, { status: 403 });
         return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
     }
 }
 
 export async function POST(request: Request) {
     try {
+        const admin = await requireAdmin();
+
         const body = await request.json();
         const { namaLengkap, username, email, password, role, statusAkun } = body;
 
@@ -71,7 +100,11 @@ export async function POST(request: Request) {
         });
 
         return NextResponse.json(newUser, { status: 201 });
-    } catch (error) {
+    } catch (error: any) {
+        if (error.message === 'UNAUTHORIZED')
+            return NextResponse.json({ error: 'Silakan login' }, { status: 401 });
+        if (error.message === 'FORBIDDEN')
+            return NextResponse.json({ error: 'Akses ditolak' }, { status: 403 });
         console.error("Error creating user:", error);
         return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
     }

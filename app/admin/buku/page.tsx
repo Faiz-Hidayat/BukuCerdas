@@ -1,9 +1,13 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, Suspense } from "react";
 import { Plus, Edit, Trash2, X, Search, Image as ImageIcon, Eye, EyeOff, Filter } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
+import { useRouter, useSearchParams } from "next/navigation";
+import Pagination from "../../_components/Pagination";
+import { toast } from 'sonner';
+import { compressImage } from '../../../lib/image-compress';
 
 interface Book {
     idBuku: number;
@@ -28,16 +32,20 @@ interface Category {
     namaKategori: string;
 }
 
-export default function BukuPage() {
+function BukuContent() {
+    const router = useRouter();
+    const searchParams = useSearchParams();
     const [books, setBooks] = useState<Book[]>([]);
     const [categories, setCategories] = useState<Category[]>([]);
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingBook, setEditingBook] = useState<Book | null>(null);
-    const [searchTerm, setSearchTerm] = useState("");
+    const [searchTerm, setSearchTerm] = useState(searchParams.get("search") || "");
     const [filterCategory, setFilterCategory] = useState<string>("all");
     const [filterStatus, setFilterStatus] = useState<string>("all");
     const [showFilters, setShowFilters] = useState(false);
+    const [currentPage, setCurrentPage] = useState(Number(searchParams.get("page")) || 1);
+    const [totalPages, setTotalPages] = useState(1);
 
     // Form State
     const [formData, setFormData] = useState({
@@ -56,42 +64,72 @@ export default function BukuPage() {
     const [coverFile, setCoverFile] = useState<File | null>(null);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
-    useEffect(() => {
-        fetchBooks();
-        fetchCategories();
-    }, []);
-
-    const fetchBooks = async () => {
+    const fetchBooks = useCallback(async () => {
+        setLoading(true);
         try {
-            const res = await fetch("/api/admin/buku");
+            const params = new URLSearchParams();
+            params.set("page", currentPage.toString());
+            params.set("limit", "10");
+            if (searchTerm) params.set("search", searchTerm);
+            const res = await fetch(`/api/admin/buku?${params.toString()}`);
             if (res.ok) {
-                const data = await res.json();
-                setBooks(data);
+                const json = await res.json();
+                setBooks(json.data);
+                setTotalPages(json.pagination.totalPages);
             }
         } catch (error) {
             console.error("Failed to fetch books", error);
         } finally {
             setLoading(false);
         }
-    };
+    }, [currentPage, searchTerm]);
+
+    useEffect(() => {
+        fetchBooks();
+    }, [fetchBooks]);
+
+    useEffect(() => {
+        fetchCategories();
+    }, []);
+
+    // Reset halaman ke 1 saat filter berubah
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchTerm, filterCategory, filterStatus]);
+
+    // Sinkronisasi URL dengan state pagination
+    useEffect(() => {
+        const params = new URLSearchParams();
+        if (currentPage > 1) params.set("page", currentPage.toString());
+        if (searchTerm) params.set("search", searchTerm);
+        const qs = params.toString();
+        router.replace(`/admin/buku${qs ? `?${qs}` : ""}`, { scroll: false });
+    }, [currentPage, searchTerm, router]);
 
     const fetchCategories = async () => {
         try {
             const res = await fetch("/api/admin/kategori-buku");
             if (res.ok) {
-                const data = await res.json();
-                setCategories(data);
+                const json = await res.json();
+                // API returns { data: [...], pagination: {...} }
+                setCategories(Array.isArray(json) ? json : json.data || []);
             }
         } catch (error) {
             console.error("Failed to fetch categories", error);
         }
     };
 
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
-            setCoverFile(file);
-            setPreviewUrl(URL.createObjectURL(file));
+            try {
+                // H2: Compress gambar sebelum set
+                const compressed = await compressImage(file);
+                setCoverFile(compressed);
+                setPreviewUrl(URL.createObjectURL(compressed));
+            } catch (err: any) {
+                toast.error(err.message || 'Gagal mengkompresi gambar');
+            }
         }
     };
 
@@ -130,7 +168,7 @@ export default function BukuPage() {
                 closeModal();
             } else {
                 const err = await res.json();
-                alert(err.error || "Gagal menyimpan buku");
+                toast.error(err.error || "Gagal menyimpan buku");
             }
         } catch (error) {
             console.error("Error saving book", error);
@@ -138,21 +176,27 @@ export default function BukuPage() {
     };
 
     const handleDelete = async (id: number) => {
-        if (!confirm("Apakah Anda yakin ingin menonaktifkan buku ini?")) return;
-
-        try {
-            const res = await fetch(`/api/admin/buku/${id}`, {
-                method: "DELETE",
-            });
-
-            if (res.ok) {
-                fetchBooks();
-            } else {
-                alert("Gagal menghapus buku");
-            }
-        } catch (error) {
-            console.error("Error deleting book", error);
-        }
+        toast('Yakin ingin menonaktifkan buku ini?', {
+            action: {
+                label: 'Nonaktifkan',
+                onClick: async () => {
+                    try {
+                        const res = await fetch(`/api/admin/buku/${id}`, {
+                            method: "DELETE",
+                        });
+                        if (res.ok) {
+                            fetchBooks();
+                            toast.success('Buku berhasil dinonaktifkan');
+                        } else {
+                            toast.error("Gagal menghapus buku");
+                        }
+                    } catch (error) {
+                        console.error("Error deleting book", error);
+                    }
+                },
+            },
+            cancel: { label: 'Batal', onClick: () => {} },
+        });
     };
 
     const openModal = (book?: Book) => {
@@ -200,15 +244,11 @@ export default function BukuPage() {
     };
 
     const filteredBooks = books.filter((b) => {
-        const matchesSearch =
-            b.judul.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            b.pengarang.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            (b.isbn && b.isbn.includes(searchTerm));
         const matchesCategory = filterCategory === "all" || b.idKategori.toString() === filterCategory;
         const matchesStatus =
             filterStatus === "all" || (filterStatus === "active" ? b.statusAktif : !b.statusAktif);
 
-        return matchesSearch && matchesCategory && matchesStatus;
+        return matchesCategory && matchesStatus;
     });
 
     const formatCurrency = (val: string | number) => {
@@ -441,6 +481,8 @@ export default function BukuPage() {
                 </div>
             </div>
 
+            <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
+
             <AnimatePresence>
                 {isModalOpen && (
                     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
@@ -665,5 +707,13 @@ export default function BukuPage() {
                 )}
             </AnimatePresence>
         </div>
+    );
+}
+
+export default function BukuPage() {
+    return (
+        <Suspense fallback={<div className="flex items-center justify-center h-full">Memuat...</div>}>
+            <BukuContent />
+        </Suspense>
     );
 }

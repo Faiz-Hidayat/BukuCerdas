@@ -1,17 +1,20 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
+import { requireAdmin } from "@/lib/auth";
 
 export async function GET() {
     try {
+        const admin = await requireAdmin();
+
         const now = new Date();
         const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
         const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
         const thirtyDaysAgo = new Date();
         thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-        // 1. KPI Cards
-        const [totalBuku, totalUser, totalPesananHariIni, pendapatanBulanIniResult] = await Promise.all([
+        // 1. KPI Cards — I3: pendapatan hanya dari pesanan selesai
+        const [totalBuku, totalUser, totalPesananHariIni, pendapatanBulanIniResult, pendapatanHariIniResult, pesananMenunggu] = await Promise.all([
             prisma.buku.count({
                 where: { statusAktif: true },
             }),
@@ -30,25 +33,43 @@ export async function GET() {
                     totalBayar: true,
                 },
                 where: {
-                    statusPembayaran: "terkonfirmasi",
+                    statusPesanan: "selesai",
                     tanggalPesan: {
                         gte: startOfMonth,
+                    },
+                },
+            }),
+            prisma.pesanan.aggregate({
+                _sum: {
+                    totalBayar: true,
+                },
+                where: {
+                    statusPesanan: "selesai",
+                    tanggalPesan: {
+                        gte: startOfDay,
+                    },
+                },
+            }),
+            prisma.pesanan.count({
+                where: {
+                    statusPesanan: {
+                        in: ["menunggu_pembayaran", "menunggu_verifikasi"],
                     },
                 },
             }),
         ]);
 
         const pendapatanBulanIni = pendapatanBulanIniResult._sum.totalBayar || 0;
+        const pendapatanHariIni = pendapatanHariIniResult._sum.totalBayar || 0;
 
-        // 2. Chart Data (Last 30 Days Revenue)
-        // Using queryRaw for grouping by date
+        // 2. Chart Data (Last 30 Days Revenue) — I3: hanya pesanan selesai
         const salesData = await prisma.$queryRaw`
       SELECT 
         DATE(tanggal_pesan) as date, 
         SUM(total_bayar) as total 
       FROM pesanan 
       WHERE tanggal_pesan >= ${thirtyDaysAgo} 
-      AND status_pembayaran = 'terkonfirmasi'
+      AND status_pesanan = 'selesai'
       GROUP BY DATE(tanggal_pesan) 
       ORDER BY date ASC
     `;
@@ -95,12 +116,18 @@ export async function GET() {
                 totalUser,
                 totalPesananHariIni,
                 pendapatanBulanIni,
+                pendapatanHariIni,
+                pesananMenunggu,
             },
             salesChart: formattedSalesData,
             notifikasi,
             pesananTerbaru,
         });
-    } catch (error) {
+    } catch (error: any) {
+        if (error.message === 'UNAUTHORIZED')
+            return NextResponse.json({ error: 'Silakan login' }, { status: 401 });
+        if (error.message === 'FORBIDDEN')
+            return NextResponse.json({ error: 'Akses ditolak' }, { status: 403 });
         console.error("Dashboard API Error:", error);
         return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
     }
