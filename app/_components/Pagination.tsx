@@ -44,8 +44,7 @@ export default function Pagination({ currentPage, totalPages, onPageChange }: Pa
           onClick={() => onPageChange(currentPage - 1)}
           disabled={currentPage <= 1}
           className="p-2 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-          aria-label="Halaman sebelumnya"
-        >
+          aria-label="Halaman sebelumnya">
           <ChevronLeft className="w-4 h-4" />
         </button>
 
@@ -62,19 +61,17 @@ export default function Pagination({ currentPage, totalPages, onPageChange }: Pa
                 p === currentPage
                   ? 'bg-amber-600 text-white shadow-sm'
                   : 'border border-slate-200 text-slate-600 hover:bg-slate-50'
-              }`}
-            >
+              }`}>
               {p}
             </button>
-          )
+          ),
         )}
 
         <button
           onClick={() => onPageChange(currentPage + 1)}
           disabled={currentPage >= totalPages}
           className="p-2 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-          aria-label="Halaman berikutnya"
-        >
+          aria-label="Halaman berikutnya">
           <ChevronRight className="w-4 h-4" />
         </button>
       </div>

@@ -106,9 +106,9 @@ function KatalogContent() {
       } else {
         const data = await res.json();
         if (res.status === 401) {
-            router.push('/login');
+          router.push('/login');
         } else {
-            toast.error(data.error || 'Gagal menambahkan ke keranjang');
+          toast.error(data.error || 'Gagal menambahkan ke keranjang');
         }
       }
     } catch (error) {
@@ -119,11 +119,11 @@ function KatalogContent() {
   return (
     <div className="min-h-screen bg-[#FDFBF7]">
       <Navbar />
-      
+
       <div className="pt-24 pb-12 px-6 lg:px-8 max-w-7xl mx-auto">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-slate-900 mb-4">Katalog Buku</h1>
-          
+
           {/* Filters */}
           <div className="flex flex-col md:flex-row gap-4 bg-white p-4 rounded-xl shadow-sm border border-slate-100">
             <div className="flex-1 relative">
@@ -133,16 +133,21 @@ function KatalogContent() {
                 placeholder="Cari judul atau pengarang..."
                 className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
                 value={search}
-                onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                  setCurrentPage(1);
+                }}
               />
             </div>
-            
+
             <div className="flex gap-4">
               <select
                 className="px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 bg-white"
                 value={selectedCategory}
-                onChange={(e) => { setSelectedCategory(e.target.value); setCurrentPage(1); }}
-              >
+                onChange={(e) => {
+                  setSelectedCategory(e.target.value);
+                  setCurrentPage(1);
+                }}>
                 <option value="">Semua Kategori</option>
                 {categories.map((cat) => (
                   <option key={cat.idKategori} value={cat.idKategori}>
@@ -150,12 +155,14 @@ function KatalogContent() {
                   </option>
                 ))}
               </select>
-              
+
               <select
                 className="px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 bg-white"
                 value={sortBy}
-                onChange={(e) => { setSortBy(e.target.value); setCurrentPage(1); }}
-              >
+                onChange={(e) => {
+                  setSortBy(e.target.value);
+                  setCurrentPage(1);
+                }}>
                 <option value="terbaru">Terbaru</option>
                 <option value="termurah">Termurah</option>
                 <option value="terlaris">Terlaris</option>
@@ -178,8 +185,7 @@ function KatalogContent() {
                 key={book.idBuku}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-md transition-all group"
-              >
+                className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-md transition-all group">
                 <div className="relative aspect-[2/3] overflow-hidden bg-slate-100">
                   {book.coverUrl ? (
                     <img
@@ -188,30 +194,26 @@ function KatalogContent() {
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center text-slate-400">
-                      No Cover
-                    </div>
+                    <div className="w-full h-full flex items-center justify-center text-slate-400">No Cover</div>
                   )}
                   <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
                 </div>
-                
+
                 <div className="p-4">
-                  <div className="text-xs text-amber-600 font-medium mb-1">
-                    {book.kategoriBuku.namaKategori}
-                  </div>
+                  <div className="text-xs text-amber-600 font-medium mb-1">{book.kategoriBuku.namaKategori}</div>
                   <Link href={`/buku/${book.idBuku}`}>
                     <h3 className="font-semibold text-slate-900 mb-1 line-clamp-1 hover:text-amber-600 transition-colors">
                       {book.judul}
                     </h3>
                   </Link>
                   <p className="text-sm text-slate-500 mb-2 line-clamp-1">{book.pengarang}</p>
-                  
+
                   <div className="flex items-center gap-1 mb-3">
                     <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
                     <span className="text-sm font-medium text-slate-700">{book.rating.toFixed(1)}</span>
                     <span className="text-xs text-slate-400">({book._count.ulasanBuku})</span>
                   </div>
-                  
+
                   <div className="flex items-center justify-between mt-auto">
                     <span className="font-bold text-slate-900">
                       Rp {parseFloat(book.harga).toLocaleString('id-ID')}
@@ -219,8 +221,7 @@ function KatalogContent() {
                     <button
                       onClick={() => addToCart(book.idBuku)}
                       className="p-2 bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-900 hover:text-white transition-colors"
-                      title="Tambah ke Keranjang"
-                    >
+                      title="Tambah ke Keranjang">
                       <ShoppingCart className="w-5 h-5" />
                     </button>
                   </div>
@@ -236,7 +237,7 @@ function KatalogContent() {
 
         <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
       </div>
-      
+
       <Footer />
     </div>
   );

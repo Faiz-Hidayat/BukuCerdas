@@ -43,17 +43,11 @@ export async function POST(request: Request) {
     // G2: Hanya untuk metode midtrans-compatible dan status menunggu_pembayaran
     const midtransMethods = ['ewallet', 'qris'];
     if (!midtransMethods.includes(pesanan.metodePembayaran)) {
-      return NextResponse.json(
-        { error: 'Metode pembayaran tidak mendukung Midtrans' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Metode pembayaran tidak mendukung Midtrans' }, { status: 400 });
     }
 
     if (pesanan.statusPesanan !== 'menunggu_pembayaran') {
-      return NextResponse.json(
-        { error: 'Pesanan tidak dalam status menunggu pembayaran' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Pesanan tidak dalam status menunggu pembayaran' }, { status: 400 });
     }
 
     // Generate midtrans order ID unik

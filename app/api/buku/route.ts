@@ -14,10 +14,7 @@ export async function GET(request: Request) {
   };
 
   if (search) {
-    where.OR = [
-      { judul: { contains: search } },
-      { pengarang: { contains: search } },
-    ];
+    where.OR = [{ judul: { contains: search } }, { pengarang: { contains: search } }];
   }
 
   if (category) {
@@ -29,7 +26,7 @@ export async function GET(request: Request) {
   if (sort === 'termurah') {
     orderBy = { harga: 'asc' };
   } else if (sort === 'terlaris') {
-     orderBy = { detailPesanan: { _count: 'desc' } };
+    orderBy = { detailPesanan: { _count: 'desc' } };
   }
 
   try {

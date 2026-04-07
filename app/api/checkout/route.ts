@@ -30,7 +30,7 @@ export async function POST(request: Request) {
     // Validasi input dengan Zod
     const parsed = checkoutSchema.safeParse(body);
     if (!parsed.success) {
-      const errors = parsed.error.issues.map(e => e.message).join(', ');
+      const errors = parsed.error.issues.map((e) => e.message).join(', ');
       return NextResponse.json({ error: errors }, { status: 400 });
     }
 
@@ -61,9 +61,7 @@ export async function POST(request: Request) {
         if (!buku || !buku.statusAktif) {
           stokErrors.push(`"${item.buku.judul}" sudah tidak tersedia`);
         } else if (buku.stok < item.jumlah) {
-          stokErrors.push(
-            `Stok "${buku.judul}" tersisa ${buku.stok}, Anda memesan ${item.jumlah}`
-          );
+          stokErrors.push(`Stok "${buku.judul}" tersisa ${buku.stok}, Anda memesan ${item.jumlah}`);
         }
       }
       if (stokErrors.length > 0) {
@@ -123,14 +121,14 @@ export async function POST(request: Request) {
 
       // 8. Generate kode pesanan unik (D9)
       const date = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-      const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+      const random = Math.floor(Math.random() * 10000)
+        .toString()
+        .padStart(4, '0');
       const kodePesanan = `INV-${date}-${random}`;
 
       // G1: Generate midtransOrderId untuk metode ewallet/qris
       const midtransOrderId =
-        metodePembayaran === 'ewallet' || metodePembayaran === 'qris'
-          ? `BC-INV-${date}-${random}-${Date.now()}`
-          : null;
+        metodePembayaran === 'ewallet' || metodePembayaran === 'qris' ? `BC-INV-${date}-${random}-${Date.now()}` : null;
 
       // 9. Snapshot alamat (agar tidak berubah jika alamat diedit)
       const alamatSnapshot = JSON.stringify({

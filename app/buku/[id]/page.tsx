@@ -121,9 +121,9 @@ export default function BookDetailPage() {
       } else {
         const data = await res.json();
         if (res.status === 401) {
-            router.push('/login');
+          router.push('/login');
         } else {
-            toast.error(data.error || 'Gagal menambahkan ke keranjang');
+          toast.error(data.error || 'Gagal menambahkan ke keranjang');
         }
       }
     } catch (error) {
@@ -160,16 +160,15 @@ export default function BookDetailPage() {
   return (
     <div className="min-h-screen bg-[#FDFBF7]">
       <Navbar />
-      
+
       <div className="pt-24 pb-12 px-6 lg:px-8 max-w-7xl mx-auto">
         <div className="flex flex-col md:flex-row gap-8 lg:gap-12">
           {/* Left Column: Cover */}
           <div className="w-full md:w-1/3 lg:w-1/4">
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="bg-white rounded-xl shadow-lg overflow-hidden sticky top-24"
-            >
+              className="bg-white rounded-xl shadow-lg overflow-hidden sticky top-24">
               <div className="aspect-[2/3] relative overflow-hidden group">
                 {book.coverUrl ? (
                   <img
@@ -193,13 +192,11 @@ export default function BookDetailPage() {
                 <span className="text-amber-600 font-medium text-sm bg-amber-50 px-3 py-1 rounded-full">
                   {book.kategoriBuku.namaKategori}
                 </span>
-                <h1 className="text-3xl md:text-4xl font-bold text-slate-900 mt-4 mb-2">
-                  {book.judul}
-                </h1>
+                <h1 className="text-3xl md:text-4xl font-bold text-slate-900 mt-4 mb-2">{book.judul}</h1>
                 <p className="text-lg text-slate-600 mb-4">
                   oleh <span className="font-semibold text-slate-800">{book.pengarang}</span>
                 </p>
-                
+
                 <div className="flex items-center gap-4 mb-6">
                   <div className="flex items-center gap-1">
                     <Star className="w-5 h-5 text-yellow-400 fill-yellow-400" />
@@ -224,8 +221,7 @@ export default function BookDetailPage() {
                       book.stok > 0
                         ? 'bg-slate-900 text-white hover:bg-slate-800 hover:shadow-lg hover:-translate-y-0.5'
                         : 'bg-slate-200 text-slate-400 cursor-not-allowed'
-                    }`}
-                  >
+                    }`}>
                     <ShoppingCart className="w-5 h-5" />
                     {book.stok > 0 ? 'Tambah ke Keranjang' : 'Stok Habis'}
                   </button>
@@ -241,8 +237,7 @@ export default function BookDetailPage() {
                       onClick={() => setActiveTab(tab as any)}
                       className={`pb-4 text-sm font-medium capitalize transition-colors relative ${
                         activeTab === tab ? 'text-slate-900' : 'text-slate-500 hover:text-slate-700'
-                      }`}
-                    >
+                      }`}>
                       {tab}
                       {activeTab === tab && (
                         <motion.div
@@ -259,8 +254,7 @@ export default function BookDetailPage() {
                     <motion.div
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
-                      className="prose prose-slate max-w-none text-slate-600 leading-relaxed"
-                    >
+                      className="prose prose-slate max-w-none text-slate-600 leading-relaxed">
                       {book.sinopsis || 'Tidak ada sinopsis.'}
                     </motion.div>
                   )}
@@ -269,8 +263,7 @@ export default function BookDetailPage() {
                     <motion.div
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
-                      className="grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-8"
-                    >
+                      className="grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-8">
                       <div className="flex justify-between py-2 border-b border-slate-50">
                         <span className="text-slate-500">Penerbit</span>
                         <span className="font-medium text-slate-900">{book.penerbit}</span>
@@ -291,11 +284,7 @@ export default function BookDetailPage() {
                   )}
 
                   {activeTab === 'ulasan' && (
-                    <motion.div
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      className="space-y-8"
-                    >
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8">
                       {canReview && (
                         <div className="bg-slate-50 rounded-xl p-6 border border-slate-200">
                           <h3 className="text-lg font-bold text-slate-900 mb-4">Tulis Ulasan Anda</h3>
@@ -308,8 +297,7 @@ export default function BookDetailPage() {
                                     key={star}
                                     type="button"
                                     onClick={() => setReviewForm({ ...reviewForm, rating: star })}
-                                    className="focus:outline-none"
-                                  >
+                                    className="focus:outline-none">
                                     <Star
                                       className={`w-8 h-8 ${
                                         star <= reviewForm.rating ? 'text-yellow-400 fill-yellow-400' : 'text-slate-300'
@@ -333,8 +321,7 @@ export default function BookDetailPage() {
                             <button
                               type="submit"
                               disabled={submittingReview}
-                              className="bg-slate-900 text-white px-6 py-2 rounded-lg font-medium hover:bg-slate-800 disabled:opacity-50"
-                            >
+                              className="bg-slate-900 text-white px-6 py-2 rounded-lg font-medium hover:bg-slate-800 disabled:opacity-50">
                               {submittingReview ? 'Mengirim...' : 'Kirim Ulasan'}
                             </button>
                           </form>
@@ -343,38 +330,42 @@ export default function BookDetailPage() {
 
                       <div className="space-y-6">
                         {book.ulasanBuku.length > 0 ? (
-                        book.ulasanBuku.map((review) => (
-                          <div key={review.idUlasan} className="bg-slate-50 rounded-xl p-4">
-                            <div className="flex items-center justify-between mb-2">
-                              <div className="flex items-center gap-2">
-                                <div className="w-8 h-8 bg-slate-200 rounded-full flex items-center justify-center overflow-hidden">
-                                  {review.user.fotoProfilUrl ? (
-                                    <img src={review.user.fotoProfilUrl} alt={review.user.namaLengkap} className="w-full h-full object-cover" />
-                                  ) : (
-                                    <User className="w-4 h-4 text-slate-500" />
-                                  )}
+                          book.ulasanBuku.map((review) => (
+                            <div key={review.idUlasan} className="bg-slate-50 rounded-xl p-4">
+                              <div className="flex items-center justify-between mb-2">
+                                <div className="flex items-center gap-2">
+                                  <div className="w-8 h-8 bg-slate-200 rounded-full flex items-center justify-center overflow-hidden">
+                                    {review.user.fotoProfilUrl ? (
+                                      <img
+                                        src={review.user.fotoProfilUrl}
+                                        alt={review.user.namaLengkap}
+                                        className="w-full h-full object-cover"
+                                      />
+                                    ) : (
+                                      <User className="w-4 h-4 text-slate-500" />
+                                    )}
+                                  </div>
+                                  <span className="font-medium text-slate-900">{review.user.namaLengkap}</span>
                                 </div>
-                                <span className="font-medium text-slate-900">{review.user.namaLengkap}</span>
+                                <span className="text-xs text-slate-500 flex items-center gap-1">
+                                  <Calendar className="w-3 h-3" />
+                                  {new Date(review.tanggalUlasan).toLocaleDateString('id-ID')}
+                                </span>
                               </div>
-                              <span className="text-xs text-slate-500 flex items-center gap-1">
-                                <Calendar className="w-3 h-3" />
-                                {new Date(review.tanggalUlasan).toLocaleDateString('id-ID')}
-                              </span>
+                              <div className="flex items-center gap-1 mb-2">
+                                {[...Array(5)].map((_, i) => (
+                                  <Star
+                                    key={i}
+                                    className={`w-4 h-4 ${i < review.rating ? 'text-yellow-400 fill-yellow-400' : 'text-slate-300'}`}
+                                  />
+                                ))}
+                              </div>
+                              <p className="text-slate-600 text-sm">{review.komentar}</p>
                             </div>
-                            <div className="flex items-center gap-1 mb-2">
-                              {[...Array(5)].map((_, i) => (
-                                <Star
-                                  key={i}
-                                  className={`w-4 h-4 ${i < review.rating ? 'text-yellow-400 fill-yellow-400' : 'text-slate-300'}`}
-                                />
-                              ))}
-                            </div>
-                            <p className="text-slate-600 text-sm">{review.komentar}</p>
-                          </div>
-                        ))
-                      ) : (
-                        <p className="text-slate-500 text-center py-8">Belum ada ulasan untuk buku ini.</p>
-                      )}
+                          ))
+                        ) : (
+                          <p className="text-slate-500 text-center py-8">Belum ada ulasan untuk buku ini.</p>
+                        )}
                       </div>
                     </motion.div>
                   )}
@@ -384,7 +375,7 @@ export default function BookDetailPage() {
           </div>
         </div>
       </div>
-      
+
       <Footer />
     </div>
   );

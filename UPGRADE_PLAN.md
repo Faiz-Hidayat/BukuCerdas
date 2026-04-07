@@ -29,7 +29,7 @@
 
 ### Prompt:
 
-```
+````
 Baca PRD.md Section 10 (Keamanan) dan Section 12.1 rule A6.
 Baca GAP_ANALYSIS.md Section 4.1 (Admin API Tanpa Auth Guard).
 
@@ -52,7 +52,7 @@ TUGAS:
      if (user.role !== 'admin') throw new Error('FORBIDDEN');
      return user;
    }
-   ```
+````
 
 2. **Tambahkan auth guard ke SEMUA endpoint admin berikut:**
    - `app/api/admin/buku/route.ts` (GET, POST)
@@ -68,15 +68,14 @@ TUGAS:
    - `app/api/admin/pengaturan/route.ts` (GET, PUT)
 
    Pattern untuk setiap handler:
+
    ```ts
    try {
      const admin = await requireAdmin();
      // ... logika yang sudah ada
    } catch (error: any) {
-     if (error.message === 'UNAUTHORIZED')
-       return NextResponse.json({ error: 'Silakan login' }, { status: 401 });
-     if (error.message === 'FORBIDDEN')
-       return NextResponse.json({ error: 'Akses ditolak' }, { status: 403 });
+     if (error.message === 'UNAUTHORIZED') return NextResponse.json({ error: 'Silakan login' }, { status: 401 });
+     if (error.message === 'FORBIDDEN') return NextResponse.json({ error: 'Akses ditolak' }, { status: 403 });
      return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
    }
    ```
@@ -92,11 +91,13 @@ TUGAS:
    Jangan expose informasi sensitif (nomor rekening detail).
 
 ### Acceptance Criteria:
+
 - [ ] Semua `/api/admin/*` endpoints mengembalikan 401 jika tidak login
 - [ ] Semua `/api/admin/*` endpoints mengembalikan 403 jika user biasa
 - [ ] Admin tidak bisa checkout (403 di API)
 - [ ] Halaman checkout masih bisa fetch pengaturan (endpoint publik baru)
 - [ ] Endpoint `/api/admin/notifikasi` dan `/api/admin/search` tetap berfungsi
+
 ```
 
 ---
@@ -110,10 +111,12 @@ TUGAS:
 ### Prompt:
 
 ```
+
 Baca PRD.md Section 12.2 (B3-B7), 12.3 (C7), 12.4 (D10), 12.10 (H1-H7).
 Baca GAP_ANALYSIS.md Section 4.2-4.5.
 
 MASALAH:
+
 - Cart PUT/DELETE tidak cek ownership (user bisa manipulasi cart orang lain)
 - Checkout tidak cek alamat milik user
 - Upload file tanpa validasi tipe & ukuran server-side
@@ -124,10 +127,11 @@ TUGAS:
 1. **Cart ownership check — `app/api/keranjang/[id]/route.ts`:**
    Di PUT dan DELETE, setelah ambil item keranjang, verifikasi bahwa
    item tersebut milik keranjang user yang sedang login:
+
    ```ts
    // Cek bahwa item ini milik keranjang user yang login
    const keranjang = await prisma.keranjang.findUnique({
-     where: { idUser: user.idUser }
+     where: { idUser: user.idUser },
    });
    if (!keranjang || item.idKeranjang !== keranjang.idKeranjang) {
      return NextResponse.json({ error: 'Item tidak ditemukan' }, { status: 404 });
@@ -136,6 +140,7 @@ TUGAS:
 
 2. **Checkout address ownership — `app/api/checkout/route.ts`:**
    Setelah fetch alamat, cek `alamat.idUser === user.idUser`:
+
    ```ts
    if (alamat.idUser !== user.idUser) {
      return NextResponse.json({ error: 'Alamat tidak valid' }, { status: 400 });
@@ -144,6 +149,7 @@ TUGAS:
 
 3. **Upload file validation — `lib/upload.ts`:**
    Tambahkan helper validasi file:
+
    ```ts
    /** Daftar MIME type yang diizinkan untuk upload gambar */
    const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
@@ -158,6 +164,7 @@ TUGAS:
      maxSize?: number;
    }): string | null { ... }
    ```
+
    Terapkan di:
    - `app/api/admin/buku/route.ts` (POST — cover upload)
    - `app/api/admin/buku/[id]/route.ts` (PUT — cover update)
@@ -215,16 +222,15 @@ TUGAS:
 
 6. **B5 — Nama kategori unik (case-insensitive):**
    Di POST dan PUT kategori, cek:
+
    ```ts
    const existing = await prisma.kategoriBuku.findFirst({
      where: {
        namaKategori: { equals: namaKategori, mode: 'insensitive' },
-       NOT: { idKategori: id } // exclude current saat edit
-     }
+       NOT: { idKategori: id }, // exclude current saat edit
+     },
    });
-   if (existing) return NextResponse.json(
-     { error: 'Nama kategori sudah digunakan' }, { status: 409 }
-   );
+   if (existing) return NextResponse.json({ error: 'Nama kategori sudah digunakan' }, { status: 409 });
    ```
 
 7. **B2 — Cek pesanan aktif saat delete/deactivate buku:**
@@ -234,18 +240,22 @@ TUGAS:
      where: {
        idBuku: id,
        pesanan: {
-         statusPesanan: { notIn: ['selesai', 'dibatalkan'] }
-       }
-     }
+         statusPesanan: { notIn: ['selesai', 'dibatalkan'] },
+       },
+     },
    });
    if (pesananAktif > 0) {
-     return NextResponse.json({
-       error: `Buku tidak bisa dinonaktifkan karena ada ${pesananAktif} pesanan aktif`
-     }, { status: 400 });
+     return NextResponse.json(
+       {
+         error: `Buku tidak bisa dinonaktifkan karena ada ${pesananAktif} pesanan aktif`,
+       },
+       { status: 400 },
+     );
    }
    ```
 
 ### Acceptance Criteria:
+
 - [ ] Cart PUT/DELETE hanya bisa untuk item milik user sendiri
 - [ ] Checkout menolak alamat yang bukan milik user
 - [ ] Upload file ditolak jika bukan gambar atau > 5MB
@@ -254,6 +264,7 @@ TUGAS:
 - [ ] Buku di pesanan aktif tidak bisa dihapus (B2)
 - [ ] Harga <= 0 ditolak (B3), stok < 0 ditolak (B4)
 - [ ] Tahun terbit di masa depan ditolak (B7)
+
 ```
 
 ---
@@ -267,10 +278,12 @@ TUGAS:
 ### Prompt:
 
 ```
+
 Baca PRD.md Section 6 (Data Model), khusus tabel Orders.
 Baca GAP_ANALYSIS.md Section 3.2, 3.3.
 
 MASALAH:
+
 - Model Pesanan tidak punya field `resi` (nomor resi pengiriman)
 - Model Pesanan tidak punya field `midtransOrderId` (untuk integrasi Midtrans)
 - Model Pesanan tidak snapshot alamat (hanya FK ke AlamatUser)
@@ -280,10 +293,11 @@ TUGAS:
 
 1. **Update `prisma/schema.prisma` — model Pesanan:**
    Tambahkan field-field berikut:
+
    ```prisma
    model Pesanan {
      // ... field yang sudah ada ...
-     
+
      // Field baru
      resi               String?             @db.VarChar(50)
      midtransOrderId    String?             @unique @map("midtrans_order_id") @db.VarChar(100)
@@ -294,6 +308,7 @@ TUGAS:
    ```
 
 2. **Update enum `StatusPesanan`:**
+
    ```prisma
    enum StatusPesanan {
      menunggu_pembayaran     // Transfer/Midtrans: belum bayar
@@ -307,6 +322,7 @@ TUGAS:
    ```
 
 3. **Jalankan migration:**
+
    ```bash
    npx prisma migrate dev --name add_resi_midtrans_alamat_snapshot
    ```
@@ -333,6 +349,7 @@ TUGAS:
    - Fallback ke relasi `alamatUser` jika kosong (data lama)
 
 ### Acceptance Criteria:
+
 - [ ] Migration berhasil tanpa error
 - [ ] Data lama tetap bisa diakses (backward-compatible)
 - [ ] Pesanan baru menyimpan alamat snapshot
@@ -340,6 +357,7 @@ TUGAS:
 - [ ] Field `midtransOrderId` tersedia di schema
 - [ ] Enum StatusPesanan punya `menunggu_pembayaran` dan `menunggu_verifikasi`
 - [ ] `npm run dev` berjalan tanpa error setelah migrasi
+
 ```
 
 ---
@@ -353,10 +371,12 @@ TUGAS:
 ### Prompt:
 
 ```
+
 Baca PRD.md Section 12.4 (D1-D10), 12.9 (Stok Lifecycle), 12.12 (J1-J4).
 Baca GAP_ANALYSIS.md Section 5.4, 5.12.
 
 MASALAH KRITIS:
+
 - Checkout TIDAK dalam database transaction → data bisa inkonsisten
 - Stok TIDAK divalidasi sebelum order → bisa order lebih dari stok
 - Race condition → 2 user bisa beli stok terakhir bersamaan
@@ -365,7 +385,7 @@ MASALAH KRITIS:
 TUGAS:
 
 1. **Rewrite `app/api/checkout/route.ts` dengan `prisma.$transaction`:**
-   
+
    ```ts
    /**
     * POST /api/checkout
@@ -379,18 +399,18 @@ TUGAS:
     */
    export async function POST(request: Request) {
      // ... auth check, input validation ...
-     
+
      const result = await prisma.$transaction(async (tx) => {
        // 1. Ambil keranjang + items
        const keranjang = await tx.keranjang.findUnique({
          where: { idUser: user.idUser },
          include: { itemKeranjang: { include: { buku: true } } }
        });
-       
+
        if (!keranjang || keranjang.itemKeranjang.length === 0) {
          throw new Error('CART_EMPTY');
        }
-       
+
        // 2. Validasi stok final (D1) — re-check setiap buku
        const stokErrors: string[] = [];
        for (const item of keranjang.itemKeranjang) {
@@ -409,7 +429,7 @@ TUGAS:
        if (stokErrors.length > 0) {
          throw new Error('STOCK_ERROR:' + JSON.stringify(stokErrors));
        }
-       
+
        // 3. Validasi alamat milik user
        const alamat = await tx.alamatUser.findUnique({
          where: { idAlamat: Number(idAlamat) }
@@ -417,7 +437,7 @@ TUGAS:
        if (!alamat || alamat.idUser !== user.idUser) {
          throw new Error('INVALID_ADDRESS');
        }
-       
+
        // 4. Hitung harga dari database (J4)
        let subtotal = 0;
        const detailItems = keranjang.itemKeranjang.map(item => {
@@ -431,13 +451,13 @@ TUGAS:
            subtotal: itemSubtotal,
          };
        });
-       
+
        // 5. Hitung ongkir & pajak
        // ... (ambil dari TarifOngkir & PengaturanToko) ...
-       
+
        // 6. Generate kode pesanan unik (D9)
        // ... generateOrderCode() ...
-       
+
        // 7. Buat pesanan (D7 — total dihitung server)
        const pesanan = await tx.pesanan.create({
          data: {
@@ -458,7 +478,7 @@ TUGAS:
            }
          }
        });
-       
+
        // 8. Kurangi stok (D2) — dalam transaction (D3 prevention)
        for (const item of keranjang.itemKeranjang) {
          await tx.buku.update({
@@ -466,20 +486,21 @@ TUGAS:
            data: { stok: { decrement: item.jumlah } }
          });
        }
-       
+
        // 9. Kosongkan cart (D8)
        await tx.itemKeranjang.deleteMany({
          where: { idKeranjang: keranjang.idKeranjang }
        });
-       
+
        return pesanan;
      });
-     
+
      // ... return response
    }
    ```
 
 2. **Tambahkan validasi stok di cart — `app/api/keranjang/route.ts` POST:**
+
    ```ts
    // C1: Cek stok sebelum tambah ke cart
    const buku = await prisma.buku.findUnique({ where: { idBuku } });
@@ -500,12 +521,16 @@ TUGAS:
    ```
 
 3. **Tambahkan validasi stok di cart update — `app/api/keranjang/[id]/route.ts` PUT:**
+
    ```ts
    // C1: Qty tidak boleh melebihi stok
    if (jumlah > buku.stok) {
-     return NextResponse.json({
-       error: `Stok tersedia hanya ${buku.stok}`
-     }, { status: 400 });
+     return NextResponse.json(
+       {
+         error: `Stok tersedia hanya ${buku.stok}`,
+       },
+       { status: 400 },
+     );
    }
    // C2: Qty 0 → hapus item, negatif → tolak
    if (jumlah <= 0) {
@@ -530,7 +555,7 @@ TUGAS:
        } else {
          await prisma.itemKeranjang.update({
            where: { idItem: item.idItem },
-           data: { jumlah: item.buku.stok }
+           data: { jumlah: item.buku.stok },
          });
          warnings.push(`Stok "${item.buku.judul}" berubah, disesuaikan menjadi ${item.buku.stok}`);
        }
@@ -541,6 +566,7 @@ TUGAS:
    ```
 
 ### Acceptance Criteria:
+
 - [ ] Checkout dalam 1 `prisma.$transaction` (J1)
 - [ ] Stok di-recheck sebelum order dibuat (D1)
 - [ ] Stok dikurangi dalam transaction yang sama (D2, D3)
@@ -550,6 +576,7 @@ TUGAS:
 - [ ] Cart GET: auto-adjust stok berubah (C5), auto-remove buku dihapus (C6)
 - [ ] Error checkout menampilkan detail item bermasalah
 - [ ] `npm run dev` berjalan tanpa error ataupun npm run build
+
 ```
 
 ---
@@ -563,10 +590,12 @@ TUGAS:
 ### Prompt:
 
 ```
+
 Baca PRD.md Section 12.8 (Status Transition Rules), 12.9 (Stok Lifecycle).
 Baca GAP_ANALYSIS.md Section 5.8, 5.9.
 
 MASALAH:
+
 - Admin bisa set status APAPUN tanpa validasi transisi
 - Stok TIDAK dikembalikan saat pesanan dibatalkan
 - Tidak ada cek resi wajib saat status diubah ke Dikirim (I1)
@@ -574,28 +603,29 @@ MASALAH:
 TUGAS:
 
 1. **Buat `lib/pesanan-status.ts` — Mapping transisi yang valid:**
+
    ```ts
-   /** 
+   /**
     * Mapping transisi status pesanan yang diizinkan.
     * Sesuai PRD Section 12.8.
     */
    export const VALID_TRANSITIONS: Record<string, string[]> = {
-     'menunggu_pembayaran': ['menunggu_verifikasi', 'dibatalkan'],
-     'menunggu_verifikasi': ['diproses', 'menunggu_pembayaran', 'dibatalkan'],
-     'menunggu_konfirmasi': ['diproses', 'dibatalkan'], // backward compat
-     'diproses': ['dikirim', 'dibatalkan'],
-     'dikirim': ['selesai', 'dibatalkan'],
-     'selesai': [],      // status final
-     'dibatalkan': [],    // status final
+     menunggu_pembayaran: ['menunggu_verifikasi', 'dibatalkan'],
+     menunggu_verifikasi: ['diproses', 'menunggu_pembayaran', 'dibatalkan'],
+     menunggu_konfirmasi: ['diproses', 'dibatalkan'], // backward compat
+     diproses: ['dikirim', 'dibatalkan'],
+     dikirim: ['selesai', 'dibatalkan'],
+     selesai: [], // status final
+     dibatalkan: [], // status final
    };
-   
+
    /**
     * Cek apakah transisi status valid
     */
    export function isValidTransition(from: string, to: string): boolean {
      return VALID_TRANSITIONS[from]?.includes(to) ?? false;
    }
-   
+
    /**
     * Cek apakah status adalah status final (tidak bisa diubah lagi)
     */
@@ -605,31 +635,42 @@ TUGAS:
    ```
 
 2. **Update `app/api/admin/pesanan/[id]/route.ts` PUT:**
+
    ```ts
    // Validasi transisi status
    if (statusPesananBaru) {
      if (isFinalStatus(pesanan.statusPesanan)) {
-       return NextResponse.json({
-         error: `Pesanan dengan status "${pesanan.statusPesanan}" tidak bisa diubah`
-       }, { status: 400 });
+       return NextResponse.json(
+         {
+           error: `Pesanan dengan status "${pesanan.statusPesanan}" tidak bisa diubah`,
+         },
+         { status: 400 },
+       );
      }
-     
+
      if (!isValidTransition(pesanan.statusPesanan, statusPesananBaru)) {
-       return NextResponse.json({
-         error: `Tidak bisa mengubah status dari "${pesanan.statusPesanan}" ke "${statusPesananBaru}"`
-       }, { status: 400 });
+       return NextResponse.json(
+         {
+           error: `Tidak bisa mengubah status dari "${pesanan.statusPesanan}" ke "${statusPesananBaru}"`,
+         },
+         { status: 400 },
+       );
      }
-     
+
      // I1: Resi wajib saat ubah ke Dikirim
      if (statusPesananBaru === 'dikirim' && !resi && !pesanan.resi) {
-       return NextResponse.json({
-         error: 'Nomor resi wajib diisi sebelum mengirim pesanan'
-       }, { status: 400 });
+       return NextResponse.json(
+         {
+           error: 'Nomor resi wajib diisi sebelum mengirim pesanan',
+         },
+         { status: 400 },
+       );
      }
    }
    ```
 
 3. **Implementasi stok restore saat pembatalan:**
+
    ```ts
    // Jika status baru = dibatalkan → kembalikan stok (12.9)
    // Gunakan transaction (J2)
@@ -638,17 +679,17 @@ TUGAS:
        // Update status pesanan
        await tx.pesanan.update({
          where: { idPesanan: id },
-         data: { statusPesanan: 'dibatalkan', ...otherData }
+         data: { statusPesanan: 'dibatalkan', ...otherData },
        });
-       
+
        // Kembalikan stok untuk setiap item
        const details = await tx.detailPesanan.findMany({
-         where: { idPesanan: id }
+         where: { idPesanan: id },
        });
        for (const detail of details) {
          await tx.buku.update({
            where: { idBuku: detail.idBuku },
-           data: { stok: { increment: detail.jumlah } }
+           data: { stok: { increment: detail.jumlah } },
          });
        }
      });
@@ -657,11 +698,15 @@ TUGAS:
 
 4. **I2 — Admin tidak bisa hapus dirinya sendiri:**
    Di `app/api/admin/user/[id]/route.ts` DELETE:
+
    ```ts
    if (Number(params.id) === admin.idUser) {
-     return NextResponse.json({
-       error: 'Tidak bisa menghapus akun Anda sendiri'
-     }, { status: 400 });
+     return NextResponse.json(
+       {
+         error: 'Tidak bisa menghapus akun Anda sendiri',
+       },
+       { status: 400 },
+     );
    }
    ```
 
@@ -675,6 +720,7 @@ TUGAS:
    `app/api/user/pesanan/[id]/upload-bukti/`.
 
 ### Acceptance Criteria:
+
 - [ ] Transisi status divalidasi sesuai flow PRD 12.8
 - [ ] Status final (selesai/dibatalkan) tidak bisa diubah
 - [ ] Pembatalan → stok dikembalikan dalam transaction (J2)
@@ -683,6 +729,7 @@ TUGAS:
 - [ ] Upload bukti hanya untuk status menunggu_pembayaran/menunggu_verifikasi (F4)
 - [ ] Status berubah ke menunggu_verifikasi setelah upload (F5)
 - [ ] Endpoint duplikat dihapus
+
 ```
 
 ---
@@ -696,6 +743,7 @@ TUGAS:
 ### Prompt:
 
 ```
+
 Baca PRD.md Section 12.11 rule I4.
 Baca GAP_ANALYSIS.md Section 7.2, 5.11.
 
@@ -704,6 +752,7 @@ MASALAH: TIDAK ada pagination di satu pun halaman. Semua data di-load sekaligus.
 TUGAS:
 
 1. **Buat helper pagination — `lib/pagination.ts`:**
+
    ```ts
    /**
     * Helper untuk menghitung skip & take dari query params,
@@ -714,7 +763,7 @@ TUGAS:
      const limit = Math.min(50, Math.max(1, Number(searchParams.get('limit') || '12')));
      return { page, limit, skip: (page - 1) * limit };
    }
-   
+
    export function paginationMeta(total: number, page: number, limit: number) {
      return {
        total,
@@ -736,6 +785,7 @@ TUGAS:
    - `app/api/user/pesanan/route.ts` GET — sama
 
 3. **Buat komponen Pagination reusable — `app/_components/Pagination.tsx`:**
+
    ```tsx
    /**
     * Komponen pagination reusable.
@@ -747,6 +797,7 @@ TUGAS:
      onPageChange: (page: number) => void;
    }
    ```
+
    Desain konsisten dengan UI yang sudah ada (Tailwind, warna tema).
 
 4. **Integrasikan pagination ke halaman UI:**
@@ -762,12 +813,14 @@ TUGAS:
    URL harus shareable: semua state ada di query params.
 
 ### Acceptance Criteria:
+
 - [ ] Semua API list return format `{ data, pagination }`
 - [ ] Default 12 items per page (katalog), 10 per page (admin tables)
 - [ ] Komponen Pagination tampil dan functional
 - [ ] Search/filter reset ke page 1
 - [ ] URL shareable (page, search, filter di searchParams)
 - [ ] Previous/Next disabled di halaman pertama/terakhir
+
 ```
 
 ---
@@ -781,9 +834,11 @@ TUGAS:
 ### Prompt:
 
 ```
+
 Baca GAP_ANALYSIS.md Section 10 (Gap UX & Polish).
 
 MASALAH:
+
 - Semua notifikasi masih pakai `alert()` dan `confirm()` — harus pakai toast
 - Banyak tombol dead (tidak navigasi)
 - `window.location.reload()` dipakai sebagai pengganti state update
@@ -791,15 +846,17 @@ MASALAH:
 TUGAS:
 
 1. **Install Sonner:**
+
    ```bash
    npm install sonner
    ```
 
 2. **Setup Toaster di root layout — `app/layout.tsx`:**
+
    ```tsx
    import { Toaster } from 'sonner';
    // Di dalam body:
-   <Toaster position="top-right" richColors closeButton />
+   <Toaster position="top-right" richColors closeButton />;
    ```
 
 3. **Ganti semua `alert()` dengan `toast` dari Sonner:**
@@ -842,6 +899,7 @@ TUGAS:
    `admin/admin123` dan `user/user123`.
 
 ### Acceptance Criteria:
+
 - [ ] Sonner Toaster tersetup di root layout
 - [ ] Semua `alert()` diganti toast
 - [ ] Semua `confirm()` diganti toast action atau dialog
@@ -850,6 +908,7 @@ TUGAS:
 - [ ] CTA buttons navigasi ke register/katalog
 - [ ] Dashboard "Lihat Semua" navigasi ke pesanan
 - [ ] Demo credentials dihapus dari login
+
 ```
 
 ---
@@ -863,10 +922,12 @@ TUGAS:
 ### Prompt:
 
 ```
+
 Baca PRD.md Section 5.5 (Daftar Pesanan), 12.8 (Status Transition).
 Baca GAP_ANALYSIS.md Section 7.1 (admin pesanan issues).
 
 MASALAH:
+
 - Tombol "Process" logic salah di admin pesanan list
 - Admin bisa set status apapun dari dropdown (harus hanya opsi valid)
 - Status timeline di pesanan user tidak handle semua status
@@ -905,6 +966,7 @@ TUGAS:
    - Sesuaikan filter query
 
 ### Acceptance Criteria:
+
 - [ ] Tombol aksi di list pesanan sesuai dengan status
 - [ ] Dropdown status hanya menampilkan transisi yang valid
 - [ ] Input resi berfungsi dan tersimpan
@@ -912,6 +974,7 @@ TUGAS:
 - [ ] Status timeline di user pesanan handle semua status
 - [ ] Nomor resi ditampilkan ke user jika ada
 - [ ] Alamat pesanan dari snapshot
+
 ```
 
 ---
@@ -925,9 +988,11 @@ TUGAS:
 ### Prompt:
 
 ```
+
 Baca GAP_ANALYSIS.md Section 7.1 (UI bugs), 10.2 (Responsiveness).
 
 MASALAH:
+
 - Admin sidebar fixed 72px, tidak responsive, tidak ada mobile handling
 - Beberapa UI bug kecil (colSpan mismatch, dll)
 - Export CSV button dead
@@ -954,16 +1019,17 @@ TUGAS:
 
 5. **Fix bug admin pesanan — `app/admin/pesanan/page.tsx`:**
    - Fix logic `handleProcessOrder` — sesuaikan di Phase 8
-   
 6. **Implementasi Export CSV — `app/admin/laporan/page.tsx`:**
    - Tombol "Export CSV": generate CSV dari data transaksi yang ditampilkan
    - Download otomatis via `Blob` + `URL.createObjectURL`
 
 ### Acceptance Criteria:
+
 - [ ] Admin sidebar collapsible di mobile (hamburger toggle)
 - [ ] Admin layout responsive di semua viewport (375, 768, 1280)
 - [ ] colSpan bug fixed
 - [ ] Export CSV button fungsional
+
 ```
 
 ---
@@ -977,10 +1043,12 @@ TUGAS:
 ### Prompt:
 
 ```
+
 Baca PRD.md Section 12.11 rule I3.
 Baca GAP_ANALYSIS.md Section 5.11.
 
 MASALAH:
+
 - Dashboard menghitung pendapatan dari semua pesanan terkonfirmasi, seharusnya
   hanya dari pesanan dengan status `selesai` (I3)
 
@@ -998,9 +1066,11 @@ TUGAS:
    - Link "Lihat Semua" wired ke `/admin/pesanan` (sudah di Phase 7)
 
 ### Acceptance Criteria:
+
 - [ ] Pendapatan dihitung hanya dari pesanan `selesai` (I3)
 - [ ] Chart data akurat
 - [ ] Card "Pesanan Menunggu" tampil
+
 ```
 
 ---
@@ -1014,24 +1084,28 @@ TUGAS:
 ### Prompt:
 
 ```
+
 Baca PRD.md Section 12.10 (H1-H7).
 Baca GAP_ANALYSIS.md Section 5.10.
 
 MASALAH:
+
 - Tidak ada client-side image compression (H2)
 - Tidak ada penghapusan file lama saat re-upload (H6)
 
 TUGAS:
 
 1. **Install browser-image-compression:**
+
    ```bash
    npm install browser-image-compression
    ```
 
 2. **Buat helper compression — `lib/image-compress.ts`:**
+
    ```ts
    import imageCompression from 'browser-image-compression';
-   
+
    /**
     * Compress gambar di client-side sebelum upload (H2).
     * Target: ≤ 1MB, max width 1920px, kualitas 0.7-0.8
@@ -1060,10 +1134,11 @@ TUGAS:
 
 4. **Hapus file lama saat re-upload (H6):**
    Buat helper `lib/upload.ts`:
+
    ```ts
    import fs from 'fs/promises';
    import path from 'path';
-   
+
    /**
     * Hapus file dari public/uploads jika ada (H6)
     */
@@ -1072,9 +1147,12 @@ TUGAS:
      try {
        const fullPath = path.join(process.cwd(), 'public', filePath);
        await fs.unlink(fullPath);
-     } catch { /* file mungkin sudah tidak ada */ }
+     } catch {
+       /* file mungkin sudah tidak ada */
+     }
    }
    ```
+
    Terapkan di:
    - Upload bukti pembayaran (re-upload)
    - Update cover buku
@@ -1082,10 +1160,12 @@ TUGAS:
    - Update QRIS image
 
 ### Acceptance Criteria:
+
 - [ ] Gambar di-compress otomatis di browser sebelum upload (H2)
 - [ ] Gambar > 2MB setelah compress ditolak (H3)
 - [ ] File lama dihapus saat re-upload (H6)
 - [ ] MIME type divalidasi di server (H4) — sudah dari Phase 2
+
 ```
 
 ---
@@ -1099,6 +1179,7 @@ TUGAS:
 ### Prompt:
 
 ```
+
 Baca PRD.md Section 4.10, 12.6 (F1-F6).
 
 TUGAS:
@@ -1119,9 +1200,11 @@ TUGAS:
    - E-wallet/QRIS: QR code/info, tombol upload
 
 ### Acceptance Criteria:
+
 - [ ] Tab filter status berfungsi di pesanan-saya
 - [ ] Upload bukti hanya muncul pada status yang tepat
 - [ ] Info pembayaran sesuai metode
+
 ```
 
 ---
@@ -1135,6 +1218,7 @@ TUGAS:
 ### Prompt:
 
 ```
+
 Baca PRD.md Section 9 (Integrasi Midtrans), 12.7 (G1-G6).
 
 CATATAN: Phase ini opsional. Jika waktu terbatas, fokus di phase lain.
@@ -1143,21 +1227,23 @@ Fitur e-wallet dan QRIS di schema sudah ada — Midtrans Snap mendukung keduanya
 TUGAS:
 
 1. **Install midtrans-client:**
+
    ```bash
    npm install midtrans-client
    ```
 
 2. **Buat helper Midtrans — `lib/midtrans.ts`:**
+
    ```ts
    import midtransClient from 'midtrans-client';
-   
+
    /** Konfigurasi Midtrans Snap client */
    const snap = new midtransClient.Snap({
      isProduction: process.env.MIDTRANS_IS_PRODUCTION === 'true',
      serverKey: process.env.MIDTRANS_SERVER_KEY!,
      clientKey: process.env.MIDTRANS_CLIENT_KEY!,
    });
-   
+
    /** Generate Midtrans snap token untuk pembayaran (G2) */
    export async function createSnapTransaction(params: {
      orderId: string;
@@ -1166,7 +1252,7 @@ TUGAS:
      customerEmail: string;
      items: Array<{ id: string; name: string; price: number; quantity: number }>;
    }) { ... }
-   
+
    /** Verifikasi signature webhook Midtrans (G3) */
    export function verifySignature(notification: any): boolean { ... }
    ```
@@ -1202,12 +1288,14 @@ TUGAS:
    ```
 
 ### Acceptance Criteria:
+
 - [ ] Snap token berhasil di-generate (G2)
 - [ ] Midtrans Snap popup tampil di frontend
 - [ ] Webhook menerima dan memproses notifikasi (G3)
 - [ ] Status mapping benar (G5)
 - [ ] Idempotency: webhook duplikat di-handle (G4)
 - [ ] Stok dikembalikan saat expire/cancel (G6, J2)
+
 ```
 
 ---
@@ -1221,6 +1309,7 @@ TUGAS:
 ### Prompt:
 
 ```
+
 Baca PRD.md Section 12.6 rule F7, 12.7 rule G6.
 
 MASALAH: Pesanan transfer yang tidak diupload buktinya dalam 24 jam
@@ -1229,6 +1318,7 @@ harus otomatis dibatalkan dan stoknya dikembalikan.
 TUGAS:
 
 1. **Buat API cron endpoint — `app/api/cron/expire-orders/route.ts`:**
+
    ```ts
    /**
     * API endpoint untuk membatalkan pesanan yang sudah
@@ -1241,9 +1331,9 @@ TUGAS:
      if (secret !== process.env.CRON_SECRET) {
        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
      }
-     
+
      const batasWaktu = new Date(Date.now() - 24 * 60 * 60 * 1000); // 24 jam lalu
-     
+
      // Cari pesanan yang sudah lewat waktu
      const expiredOrders = await prisma.pesanan.findMany({
        where: {
@@ -1252,7 +1342,7 @@ TUGAS:
        },
        include: { detailPesanan: true },
      });
-     
+
      // Batalkan satu per satu dalam transaction
      for (const order of expiredOrders) {
        await prisma.$transaction(async (tx) => {
@@ -1270,7 +1360,7 @@ TUGAS:
          }
        });
      }
-     
+
      return NextResponse.json({
        message: `${expiredOrders.length} pesanan dibatalkan`,
      });
@@ -1280,19 +1370,23 @@ TUGAS:
 2. **Setup Vercel Cron (jika deploy ke Vercel) — `vercel.json`:**
    ```json
    {
-     "crons": [{
-       "path": "/api/cron/expire-orders",
-       "schedule": "0 * * * *"
-     }]
+     "crons": [
+       {
+         "path": "/api/cron/expire-orders",
+         "schedule": "0 * * * *"
+       }
+     ]
    }
    ```
    Atau bisa dipanggil manual via curl untuk development.
 
 ### Acceptance Criteria:
+
 - [ ] Pesanan > 24 jam menunggu_pembayaran otomatis dibatalkan (F7)
 - [ ] Stok dikembalikan saat auto-cancel (12.9)
 - [ ] Endpoint dilindungi CRON_SECRET
 - [ ] Cron berjalan setiap jam (atau sesuai config)
+
 ```
 
 ---
@@ -1306,6 +1400,7 @@ TUGAS:
 ### Prompt:
 
 ```
+
 Baca GAP_ANALYSIS.md Section 10.3 (Loading & Error States).
 
 TUGAS:
@@ -1340,11 +1435,13 @@ TUGAS:
    ```
 
 ### Acceptance Criteria:
+
 - [ ] Halaman 404 custom dengan desain menarik
 - [ ] Error boundary menangkap runtime errors
 - [ ] Error state di semua halaman data-fetching
 - [ ] Loading skeleton konsisten
 - [ ] SEO metadata di setiap halaman
+
 ```
 
 ---
@@ -1358,10 +1455,12 @@ TUGAS:
 ### Prompt:
 
 ```
+
 Baca PRD.md Section 4.5.
 Baca GAP_ANALYSIS.md Section 7.1 (kontak issues).
 
 MASALAH:
+
 - WhatsApp number hardcoded di kontak page
 - PRD bilang contact TIDAK simpan ke database (hanya WA redirect),
   tapi project menyimpan ke DB (sebenarnya ini fitur bonus yang bagus, keep it)
@@ -1382,8 +1481,10 @@ TUGAS:
    ```
 
 ### Acceptance Criteria:
+
 - [ ] WhatsApp number dari environment variable
 - [ ] Link WhatsApp benar dan bisa dibuka
+
 ```
 
 ---
@@ -1414,23 +1515,25 @@ TUGAS:
 ## Urutan Eksekusi yang Disarankan
 
 ```
-Phase 1 (Auth Guard)          ← paling kritis, paling cepat
-  ↓
-Phase 2 (Validation)          ← keamanan
-  ↓
-Phase 3 (Schema Update)       ← prasyarat untuk Phase 4, 5, 8
-  ↓
+
+Phase 1 (Auth Guard) ← paling kritis, paling cepat
+↓
+Phase 2 (Validation) ← keamanan
+↓
+Phase 3 (Schema Update) ← prasyarat untuk Phase 4, 5, 8
+↓
 Phase 4 (Checkout Transaction) ← data integrity
-  ↓
-Phase 5 (Status Transition)    ← business logic inti
-  ↓
-Phase 7 (UX Polish)            ← quick win, UX improvement
-  ↓
-Phase 6 (Pagination)           ← semua halaman
-  ↓
-Phase 8 (Admin Pesanan UI)     ← butuh Phase 3 & 5 selesai
-  ↓
-Phase 9-16                     ← paralel/urutan bebas
+↓
+Phase 5 (Status Transition) ← business logic inti
+↓
+Phase 7 (UX Polish) ← quick win, UX improvement
+↓
+Phase 6 (Pagination) ← semua halaman
+↓
+Phase 8 (Admin Pesanan UI) ← butuh Phase 3 & 5 selesai
+↓
+Phase 9-16 ← paralel/urutan bebas
+
 ```
 
 ---
@@ -1438,18 +1541,20 @@ Phase 9-16                     ← paralel/urutan bebas
 ## Dependency Graph
 
 ```
+
 Phase 1 ─→ Phase 2 ─→ Phase 3 ─→ Phase 4 ─→ Phase 5
-                         │                      │
-                         ├──→ Phase 8 ←─────────┘
-                         │
-                         └──→ Phase 13 (Midtrans, butuh schema)
-                                  │
-                                  └──→ Phase 14 (Cron, butuh Midtrans status)
+│ │
+├──→ Phase 8 ←─────────┘
+│
+└──→ Phase 13 (Midtrans, butuh schema)
+│
+└──→ Phase 14 (Cron, butuh Midtrans status)
 
 Phase 6 (independen, bisa kapan saja)
 Phase 7 (independen, bisa kapan saja)
 Phase 9-12 (independen)
 Phase 15-16 (independen, terakhir)
+
 ```
 
 ---
@@ -1471,3 +1576,4 @@ Phase 15-16 (independen, terakhir)
 | Concurrency | 10% | **95%** | J1-J4 ✅ |
 | UI/UX | 70% | **95%** | Pagination, Toast, Responsive ✅ |
 | **Keseluruhan** | **~55%** | **~95%** | |
+```

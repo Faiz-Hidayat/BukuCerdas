@@ -8,8 +8,14 @@
     font-family: 'Inter', var(--font-inter), sans-serif;
     color: #1e293b;
   }
-  
-  h1, h2, h3, h4, h5, h6, .serif {
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6,
+  .serif {
     font-family: 'Libre Baskerville', var(--font-libre-baskerville), serif;
   }
 }
@@ -19,11 +25,11 @@
   .preserve-3d {
     transform-style: preserve-3d;
   }
-  
+
   .backface-hidden {
     backface-visibility: hidden;
   }
-  
+
   .perspective-1000 {
     perspective: 1000px;
   }
@@ -40,7 +46,7 @@ html {
 }
 
 ::-webkit-scrollbar-track {
-  background: #FDFBF7;
+  background: #fdfbf7;
 }
 
 ::-webkit-scrollbar-thumb {
@@ -61,8 +67,11 @@ html {
   }
 
   /* Sembunyikan sidebar & topbar admin */
-  nav, aside, header,
-  [data-sidebar], [data-topbar] {
+  nav,
+  aside,
+  header,
+  [data-sidebar],
+  [data-topbar] {
     display: none !important;
   }
 

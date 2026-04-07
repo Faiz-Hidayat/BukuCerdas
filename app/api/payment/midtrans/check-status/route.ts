@@ -69,10 +69,7 @@ export async function POST(request: Request) {
     }
 
     // Mapping status
-    const mapping = mapMidtransStatus(
-      midtransStatus.transaction_status,
-      midtransStatus.fraud_status
-    );
+    const mapping = mapMidtransStatus(midtransStatus.transaction_status, midtransStatus.fraud_status);
 
     if (mapping.skip) {
       return NextResponse.json({

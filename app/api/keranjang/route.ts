@@ -60,7 +60,7 @@ export async function GET() {
 
     // Re-fetch setelah adjustment
     if (warnings.length > 0) {
-      keranjang = await prisma.keranjang.findUnique({
+      keranjang = (await prisma.keranjang.findUnique({
         where: { idUser: user.idUser },
         include: {
           itemKeranjang: {
@@ -69,7 +69,7 @@ export async function GET() {
             },
           },
         },
-      }) as typeof keranjang;
+      })) as typeof keranjang;
     }
 
     return NextResponse.json({ ...keranjang, warnings });
@@ -131,9 +131,12 @@ export async function POST(request: Request) {
     // C1: Total qty (existing + baru) tidak boleh melebihi stok
     const totalQty = (existingItem?.jumlah || 0) + qty;
     if (totalQty > buku.stok) {
-      return NextResponse.json({
-        error: `Stok tersedia hanya ${buku.stok}${existingItem ? `. Anda sudah memiliki ${existingItem.jumlah} di keranjang` : ''}`
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          error: `Stok tersedia hanya ${buku.stok}${existingItem ? `. Anda sudah memiliki ${existingItem.jumlah} di keranjang` : ''}`,
+        },
+        { status: 400 },
+      );
     }
 
     if (existingItem) {

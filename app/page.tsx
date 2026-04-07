@@ -13,17 +13,18 @@ export default function HomePage() {
   return (
     <div className="min-h-screen">
       {/* Fixed Background Image */}
-      <div 
+      <div
         className="fixed top-0 w-full h-screen bg-cover bg-center -z-10 opacity-30 pointer-events-none"
         style={{
-          backgroundImage: 'url("https://hoirqrkdgbmvpwutwuwj.supabase.co/storage/v1/object/public/assets/assets/a2dfacfd-093c-4775-bacd-c83e2cfff896_3840w.jpg")',
+          backgroundImage:
+            'url("https://hoirqrkdgbmvpwutwuwj.supabase.co/storage/v1/object/public/assets/assets/a2dfacfd-093c-4775-bacd-c83e2cfff896_3840w.jpg")',
           maskImage: 'linear-gradient(to bottom, transparent, black 0%, black 80%, transparent)',
-          WebkitMaskImage: 'linear-gradient(to bottom, transparent, black 0%, black 80%, transparent)'
+          WebkitMaskImage: 'linear-gradient(to bottom, transparent, black 0%, black 80%, transparent)',
         }}
       />
-      
+
       <Navbar />
-      
+
       <main>
         <Hero />
         <Features />
@@ -31,7 +32,7 @@ export default function HomePage() {
         <Categories />
         <BestSellers />
         <Testimonials />
-        
+
         {/* CTA Section */}
         <section className="py-16 lg:py-24 px-6">
           <div className="max-w-6xl mx-auto bg-slate-900 rounded-3xl overflow-hidden relative">
@@ -52,13 +53,18 @@ export default function HomePage() {
                 Mulai Petualangan Membaca Anda
               </h2>
               <p className="text-slate-300 text-lg max-w-2xl mx-auto mb-10">
-                Daftar sekarang dan dapatkan diskon 20% untuk pembelian pertama Anda. Gratis ongkir ke seluruh Jabodetabek.
+                Daftar sekarang dan dapatkan diskon 20% untuk pembelian pertama Anda. Gratis ongkir ke seluruh
+                Jabodetabek.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Link href="/register" className="bg-white text-slate-900 px-8 py-4 rounded-full font-semibold hover:bg-amber-50 transition-all duration-300 hover:shadow-lg transform hover:-translate-y-1">
+                <Link
+                  href="/register"
+                  className="bg-white text-slate-900 px-8 py-4 rounded-full font-semibold hover:bg-amber-50 transition-all duration-300 hover:shadow-lg transform hover:-translate-y-1">
                   Daftar Gratis
                 </Link>
-                <Link href="/katalog" className="px-8 py-4 rounded-full font-semibold text-white border border-slate-600 hover:bg-slate-800 transition-all duration-300">
+                <Link
+                  href="/katalog"
+                  className="px-8 py-4 rounded-full font-semibold text-white border border-slate-600 hover:bg-slate-800 transition-all duration-300">
                   Lihat Promo
                 </Link>
               </div>
@@ -66,7 +72,7 @@ export default function HomePage() {
           </div>
         </section>
       </main>
-      
+
       <Footer />
     </div>
   );

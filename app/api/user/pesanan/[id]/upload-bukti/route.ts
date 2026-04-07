@@ -3,10 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth';
 import { saveFile, validateUploadFile, deleteOldFile } from '@/lib/upload';
 
-export async function POST(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const user = await getCurrentUser();
     if (!user) {
@@ -32,9 +29,12 @@ export async function POST(
     // F4: Hanya bisa upload jika status = menunggu_pembayaran atau menunggu_verifikasi
     const allowedStatuses = ['menunggu_pembayaran', 'menunggu_verifikasi'];
     if (!allowedStatuses.includes(pesanan.statusPesanan)) {
-      return NextResponse.json({
-        error: `Upload bukti tidak diizinkan untuk pesanan dengan status "${pesanan.statusPesanan}"`
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          error: `Upload bukti tidak diizinkan untuk pesanan dengan status "${pesanan.statusPesanan}"`,
+        },
+        { status: 400 },
+      );
     }
 
     const formData = await request.formData();

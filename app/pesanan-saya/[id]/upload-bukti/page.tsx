@@ -65,13 +65,12 @@ export default function UploadBuktiPage() {
   return (
     <div className="min-h-screen bg-[#FDFBF7]">
       <Navbar />
-      
+
       <div className="pt-24 pb-12 px-6 lg:px-8 max-w-3xl mx-auto">
         <div className="mb-8">
-          <button 
+          <button
             onClick={() => router.back()}
-            className="inline-flex items-center gap-2 text-slate-600 hover:text-slate-900 mb-4"
-          >
+            className="inline-flex items-center gap-2 text-slate-600 hover:text-slate-900 mb-4">
             <ArrowLeft className="w-4 h-4" />
             Kembali
           </button>
@@ -92,11 +91,7 @@ export default function UploadBuktiPage() {
               />
               {previewUrl ? (
                 <div className="relative h-64 w-full">
-                  <img 
-                    src={previewUrl} 
-                    alt="Preview" 
-                    className="w-full h-full object-contain rounded-lg"
-                  />
+                  <img src={previewUrl} alt="Preview" className="w-full h-full object-contain rounded-lg" />
                   <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity rounded-lg">
                     <p className="text-white font-medium">Ganti Foto</p>
                   </div>
@@ -116,8 +111,7 @@ export default function UploadBuktiPage() {
               <button
                 type="submit"
                 disabled={!file || uploading}
-                className="flex items-center gap-2 bg-slate-900 text-white px-8 py-3 rounded-xl font-medium hover:bg-slate-800 transition-all hover:shadow-lg hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
+                className="flex items-center gap-2 bg-slate-900 text-white px-8 py-3 rounded-xl font-medium hover:bg-slate-800 transition-all hover:shadow-lg hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed">
                 {uploading ? (
                   <>
                     <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -134,7 +128,7 @@ export default function UploadBuktiPage() {
           </form>
         </div>
       </div>
-      
+
       <Footer />
     </div>
   );

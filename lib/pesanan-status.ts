@@ -3,13 +3,13 @@
  * Sesuai PRD Section 12.8.
  */
 export const VALID_TRANSITIONS: Record<string, string[]> = {
-  'menunggu_pembayaran': ['menunggu_verifikasi', 'dibatalkan'],
-  'menunggu_verifikasi': ['diproses', 'menunggu_pembayaran', 'dibatalkan'],
-  'menunggu_konfirmasi': ['diproses', 'dibatalkan'], // backward compat
-  'diproses': ['dikirim', 'dibatalkan'],
-  'dikirim': ['selesai', 'dibatalkan'],
-  'selesai': [],      // status final
-  'dibatalkan': [],    // status final
+  menunggu_pembayaran: ['menunggu_verifikasi', 'dibatalkan'],
+  menunggu_verifikasi: ['diproses', 'menunggu_pembayaran', 'dibatalkan'],
+  menunggu_konfirmasi: ['diproses', 'dibatalkan'], // backward compat
+  diproses: ['dikirim', 'dibatalkan'],
+  dikirim: ['selesai', 'dibatalkan'],
+  selesai: [], // status final
+  dibatalkan: [], // status final
 };
 
 /**

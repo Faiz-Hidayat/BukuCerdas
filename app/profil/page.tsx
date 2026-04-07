@@ -33,7 +33,7 @@ export default function ProfilPage() {
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  
+
   // Form states
   const [formData, setFormData] = useState<UserData>({
     namaLengkap: '',
@@ -63,10 +63,7 @@ export default function ProfilPage() {
 
   const fetchData = async () => {
     try {
-      const [userRes, addrRes] = await Promise.all([
-        fetch('/api/auth/me'),
-        fetch('/api/user/alamat'),
-      ]);
+      const [userRes, addrRes] = await Promise.all([fetch('/api/auth/me'), fetch('/api/user/alamat')]);
 
       if (userRes.ok) {
         const userData = await userRes.json();
@@ -154,13 +151,13 @@ export default function ProfilPage() {
         setAddresses([...addresses, data]);
         setShowAddressForm(false);
         setNewAddress({
-            namaPenerima: '',
-            nomorTelepon: '',
-            kota: '',
-            provinsi: '',
-            alamatLengkap: '',
-            kodePos: '',
-            isDefault: false,
+          namaPenerima: '',
+          nomorTelepon: '',
+          kota: '',
+          provinsi: '',
+          alamatLengkap: '',
+          kodePos: '',
+          isDefault: false,
         });
         // If default was set, refresh to update others
         if (newAddress.isDefault) fetchData();
@@ -180,7 +177,7 @@ export default function ProfilPage() {
               method: 'DELETE',
             });
             if (res.ok) {
-              setAddresses(addresses.filter(a => a.idAlamat !== id));
+              setAddresses(addresses.filter((a) => a.idAlamat !== id));
               toast.success('Alamat berhasil dihapus');
             }
           } catch (error) {
@@ -224,7 +221,7 @@ export default function ProfilPage() {
   return (
     <div className="min-h-screen bg-[#FDFBF7]">
       <Navbar />
-      
+
       <div className="pt-24 pb-12 px-6 lg:px-8 max-w-7xl mx-auto">
         <h1 className="text-3xl font-bold text-slate-900 mb-8">Profil Saya</h1>
 
@@ -235,9 +232,9 @@ export default function ProfilPage() {
               <div className="p-6 text-center border-b border-slate-100">
                 <div className="w-24 h-24 bg-slate-100 rounded-full mx-auto mb-4 overflow-hidden">
                   {previewUrl || formData.fotoProfilUrl ? (
-                    <img 
-                      src={previewUrl || formData.fotoProfilUrl || ''} 
-                      alt="Profile" 
+                    <img
+                      src={previewUrl || formData.fotoProfilUrl || ''}
+                      alt="Profile"
                       className="w-full h-full object-cover"
                     />
                   ) : (
@@ -254,8 +251,7 @@ export default function ProfilPage() {
                   onClick={() => setActiveTab('profil')}
                   className={`w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition-colors flex items-center gap-3 ${
                     activeTab === 'profil' ? 'bg-amber-50 text-amber-700' : 'text-slate-600 hover:bg-slate-50'
-                  }`}
-                >
+                  }`}>
                   <User className="w-4 h-4" />
                   Edit Profil
                 </button>
@@ -263,8 +259,7 @@ export default function ProfilPage() {
                   onClick={() => setActiveTab('alamat')}
                   className={`w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition-colors flex items-center gap-3 ${
                     activeTab === 'alamat' ? 'bg-amber-50 text-amber-700' : 'text-slate-600 hover:bg-slate-50'
-                  }`}
-                >
+                  }`}>
                   <MapPin className="w-4 h-4" />
                   Daftar Alamat
                 </button>
@@ -278,13 +273,13 @@ export default function ProfilPage() {
               {activeTab === 'profil' ? (
                 <form onSubmit={handleProfileUpdate} className="space-y-6">
                   <h2 className="text-xl font-bold text-slate-900 mb-6">Edit Profil</h2>
-                  
+
                   <div className="flex items-center gap-6 mb-8">
                     <div className="w-20 h-20 bg-slate-100 rounded-full overflow-hidden relative group">
                       {previewUrl || formData.fotoProfilUrl ? (
-                        <img 
-                          src={previewUrl || formData.fotoProfilUrl || ''} 
-                          alt="Profile" 
+                        <img
+                          src={previewUrl || formData.fotoProfilUrl || ''}
+                          alt="Profile"
                           className="w-full h-full object-cover"
                         />
                       ) : (
@@ -346,9 +341,10 @@ export default function ProfilPage() {
                     <button
                       type="submit"
                       disabled={saving}
-                      className="flex items-center gap-2 bg-slate-900 text-white px-6 py-2.5 rounded-lg font-medium hover:bg-slate-800 transition-colors disabled:opacity-50"
-                    >
-                      {saving ? 'Menyimpan...' : (
+                      className="flex items-center gap-2 bg-slate-900 text-white px-6 py-2.5 rounded-lg font-medium hover:bg-slate-800 transition-colors disabled:opacity-50">
+                      {saving ? (
+                        'Menyimpan...'
+                      ) : (
                         <>
                           <Save className="w-4 h-4" />
                           Simpan Perubahan
@@ -364,8 +360,7 @@ export default function ProfilPage() {
                     {!showAddressForm && (
                       <button
                         onClick={() => setShowAddressForm(true)}
-                        className="flex items-center gap-2 text-amber-600 font-medium hover:text-amber-700"
-                      >
+                        className="flex items-center gap-2 text-amber-600 font-medium hover:text-amber-700">
                         <Plus className="w-4 h-4" />
                         Tambah Alamat
                       </button>
@@ -433,20 +428,20 @@ export default function ProfilPage() {
                           onChange={(e) => setNewAddress({ ...newAddress, isDefault: e.target.checked })}
                           className="rounded border-slate-300 text-amber-600 focus:ring-amber-500"
                         />
-                        <label htmlFor="isDefault" className="text-sm text-slate-700">Jadikan alamat utama</label>
+                        <label htmlFor="isDefault" className="text-sm text-slate-700">
+                          Jadikan alamat utama
+                        </label>
                       </div>
                       <div className="flex gap-2 justify-end">
                         <button
                           type="button"
                           onClick={() => setShowAddressForm(false)}
-                          className="px-4 py-2 text-slate-600 hover:bg-slate-200 rounded-lg"
-                        >
+                          className="px-4 py-2 text-slate-600 hover:bg-slate-200 rounded-lg">
                           Batal
                         </button>
                         <button
                           type="submit"
-                          className="px-4 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800"
-                        >
+                          className="px-4 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800">
                           Simpan Alamat
                         </button>
                       </div>
@@ -454,31 +449,35 @@ export default function ProfilPage() {
                   ) : (
                     <div className="space-y-4">
                       {addresses.map((addr) => (
-                        <div key={addr.idAlamat} className="border border-slate-100 rounded-xl p-4 hover:border-slate-200 transition-colors">
+                        <div
+                          key={addr.idAlamat}
+                          className="border border-slate-100 rounded-xl p-4 hover:border-slate-200 transition-colors">
                           <div className="flex justify-between items-start">
                             <div>
                               <div className="flex items-center gap-2 mb-1">
                                 <span className="font-semibold text-slate-900">{addr.namaPenerima}</span>
                                 {addr.isDefault && (
-                                  <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-medium">Utama</span>
+                                  <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-medium">
+                                    Utama
+                                  </span>
                                 )}
                               </div>
                               <p className="text-sm text-slate-600">{addr.nomorTelepon}</p>
-                              <p className="text-sm text-slate-600 mt-1">{addr.alamatLengkap}, {addr.kota}, {addr.provinsi} {addr.kodePos}</p>
+                              <p className="text-sm text-slate-600 mt-1">
+                                {addr.alamatLengkap}, {addr.kota}, {addr.provinsi} {addr.kodePos}
+                              </p>
                             </div>
                             <div className="flex items-center gap-2">
                               {!addr.isDefault && (
                                 <button
                                   onClick={() => handleSetDefaultAddress(addr.idAlamat)}
-                                  className="text-sm text-slate-500 hover:text-amber-600 px-2 py-1"
-                                >
+                                  className="text-sm text-slate-500 hover:text-amber-600 px-2 py-1">
                                   Set Utama
                                 </button>
                               )}
                               <button
                                 onClick={() => handleDeleteAddress(addr.idAlamat)}
-                                className="text-slate-400 hover:text-red-500 p-1"
-                              >
+                                className="text-slate-400 hover:text-red-500 p-1">
                                 <Trash2 className="w-4 h-4" />
                               </button>
                             </div>
@@ -496,7 +495,7 @@ export default function ProfilPage() {
           </div>
         </div>
       </div>
-      
+
       <Footer />
     </div>
   );

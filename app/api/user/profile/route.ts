@@ -31,7 +31,10 @@ export async function PUT(request: Request) {
         return NextResponse.json({ error: uploadError }, { status: 400 });
       }
       // H6: Hapus foto lama
-      const currentUser = await prisma.user.findUnique({ where: { idUser: user.idUser }, select: { fotoProfilUrl: true } });
+      const currentUser = await prisma.user.findUnique({
+        where: { idUser: user.idUser },
+        select: { fotoProfilUrl: true },
+      });
       await deleteOldFile(currentUser?.fotoProfilUrl);
       const url = await saveFile(fotoProfil, 'profil');
       data.fotoProfilUrl = url;

@@ -106,8 +106,7 @@ function LoginForm() {
         <button
           type="submit"
           disabled={isLoading}
-          className="w-full bg-slate-900 text-white px-6 py-3 rounded-full font-medium hover:bg-slate-800 transition-colors disabled:bg-slate-400 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-        >
+          className="w-full bg-slate-900 text-white px-6 py-3 rounded-full font-medium hover:bg-slate-800 transition-colors disabled:bg-slate-400 disabled:cursor-not-allowed flex items-center justify-center gap-2">
           {isLoading ? (
             <>
               <Loader2 className="w-5 h-5 animate-spin" />
@@ -124,7 +123,6 @@ function LoginForm() {
           Kembali ke Beranda
         </Link>
       </div>
-
     </div>
   );
 }
@@ -149,11 +147,12 @@ export default function LoginPage() {
           </p>
         </div>
 
-        <Suspense fallback={
-          <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-8 flex justify-center">
-            <Loader2 className="w-8 h-8 animate-spin text-slate-400" />
-          </div>
-        }>
+        <Suspense
+          fallback={
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-8 flex justify-center">
+              <Loader2 className="w-8 h-8 animate-spin text-slate-400" />
+            </div>
+          }>
           <LoginForm />
         </Suspense>
       </div>

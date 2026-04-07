@@ -23,11 +23,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Signature tidak valid' }, { status: 403 });
     }
 
-    const {
-      order_id,
-      transaction_status,
-      fraud_status,
-    } = notification;
+    const { order_id, transaction_status, fraud_status } = notification;
 
     // Cari pesanan berdasarkan midtransOrderId
     const pesanan = await prisma.pesanan.findFirst({

@@ -6,8 +6,20 @@ import Link from 'next/link';
 import Navbar from '../../(marketing)/_components/Navbar';
 import Footer from '../../(marketing)/_components/Footer';
 import {
-  Package, MapPin, CreditCard, ArrowLeft, Upload, Truck, CheckCircle,
-  Clock, XCircle, Banknote, QrCode, Image as ImageIcon, Copy, Check
+  Package,
+  MapPin,
+  CreditCard,
+  ArrowLeft,
+  Upload,
+  Truck,
+  CheckCircle,
+  Clock,
+  XCircle,
+  Banknote,
+  QrCode,
+  Image as ImageIcon,
+  Copy,
+  Check,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -53,16 +65,36 @@ interface PengaturanToko {
 
 // Urutan status untuk tracking timeline
 const TRACKING_STEPS = [
-  { key: 'menunggu_pembayaran', label: 'Menunggu Pembayaran', icon: Clock, description: 'Pesanan dibuat, menunggu pembayaran' },
-  { key: 'menunggu_verifikasi', label: 'Verifikasi Pembayaran', icon: Banknote, description: 'Bukti pembayaran dikirim, menunggu verifikasi admin' },
-  { key: 'diproses', label: 'Diproses', icon: Package, description: 'Pembayaran dikonfirmasi, pesanan sedang diproses' },
+  {
+    key: 'menunggu_pembayaran',
+    label: 'Menunggu Pembayaran',
+    icon: Clock,
+    description: 'Pesanan dibuat, menunggu pembayaran',
+  },
+  {
+    key: 'menunggu_verifikasi',
+    label: 'Verifikasi Pembayaran',
+    icon: Banknote,
+    description: 'Bukti pembayaran dikirim, menunggu verifikasi admin',
+  },
+  {
+    key: 'diproses',
+    label: 'Diproses',
+    icon: Package,
+    description: 'Pembayaran dikonfirmasi, pesanan sedang diproses',
+  },
   { key: 'dikirim', label: 'Dikirim', icon: Truck, description: 'Pesanan dalam pengiriman' },
   { key: 'selesai', label: 'Selesai', icon: CheckCircle, description: 'Pesanan telah diterima' },
 ];
 
 // Untuk COD, tracking berbeda (tidak ada step pembayaran)
 const TRACKING_STEPS_COD = [
-  { key: 'menunggu_konfirmasi', label: 'Menunggu Konfirmasi', icon: Clock, description: 'Pesanan dibuat, menunggu konfirmasi admin' },
+  {
+    key: 'menunggu_konfirmasi',
+    label: 'Menunggu Konfirmasi',
+    icon: Clock,
+    description: 'Pesanan dibuat, menunggu konfirmasi admin',
+  },
   { key: 'diproses', label: 'Diproses', icon: Package, description: 'Pesanan sedang diproses' },
   { key: 'dikirim', label: 'Dikirim', icon: Truck, description: 'Pesanan dalam pengiriman' },
   { key: 'selesai', label: 'Selesai', icon: CheckCircle, description: 'Pesanan diterima & dibayar' },
@@ -203,16 +235,19 @@ export default function OrderDetailPage() {
   // Tampilkan tombol cek status Midtrans untuk ewallet/qris yang masih menunggu
   const showCheckMidtransButton = isMidtrans && order.statusPesanan === 'menunggu_pembayaran';
   // Tampilkan bukti yang sudah diupload saat menunggu_verifikasi
-  const showUploadedProof = !isCOD && !isMidtrans && order.buktiPembayaranUrl && order.statusPesanan === 'menunggu_verifikasi';
+  const showUploadedProof =
+    !isCOD && !isMidtrans && order.buktiPembayaranUrl && order.statusPesanan === 'menunggu_verifikasi';
 
   return (
     <div className="min-h-screen bg-[#FDFBF7]">
       <Navbar />
-      
+
       <div className="pt-24 pb-12 px-6 lg:px-8 max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <Link href="/pesanan-saya" className="inline-flex items-center gap-2 text-slate-500 hover:text-slate-900 transition-colors mb-4">
+          <Link
+            href="/pesanan-saya"
+            className="inline-flex items-center gap-2 text-slate-500 hover:text-slate-900 transition-colors mb-4">
             <ArrowLeft className="w-4 h-4" />
             Kembali ke Pesanan Saya
           </Link>
@@ -222,7 +257,13 @@ export default function OrderDetailPage() {
               <p className="text-slate-500 mt-1">
                 Kode: <span className="font-mono font-semibold text-slate-700">{order.kodePesanan}</span>
                 <span className="mx-2">·</span>
-                {new Date(order.tanggalPesan).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                {new Date(order.tanggalPesan).toLocaleDateString('id-ID', {
+                  day: 'numeric',
+                  month: 'long',
+                  year: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })}
               </p>
             </div>
           </div>
@@ -242,7 +283,9 @@ export default function OrderDetailPage() {
                   </div>
                   <div>
                     <p className="font-semibold text-red-700">Pesanan Dibatalkan</p>
-                    <p className="text-sm text-red-600 mt-0.5">Pesanan ini telah dibatalkan dan tidak dapat diproses lebih lanjut.</p>
+                    <p className="text-sm text-red-600 mt-0.5">
+                      Pesanan ini telah dibatalkan dan tidak dapat diproses lebih lanjut.
+                    </p>
                   </div>
                 </div>
               ) : (
@@ -263,26 +306,26 @@ export default function OrderDetailPage() {
                         )}
 
                         {/* Icon circle */}
-                        <div className={`relative z-10 w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-all ${
-                          isCurrent
-                            ? 'bg-amber-500 text-white ring-4 ring-amber-100'
-                            : isCompleted
-                              ? 'bg-amber-500 text-white'
-                              : 'bg-slate-100 text-slate-400'
-                        }`}>
+                        <div
+                          className={`relative z-10 w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-all ${
+                            isCurrent
+                              ? 'bg-amber-500 text-white ring-4 ring-amber-100'
+                              : isCompleted
+                                ? 'bg-amber-500 text-white'
+                                : 'bg-slate-100 text-slate-400'
+                          }`}>
                           <Icon className="w-5 h-5" />
                         </div>
 
                         {/* Content */}
                         <div className={`pb-8 ${isLast ? 'pb-0' : ''}`}>
-                          <p className={`font-semibold ${
-                            isCurrent ? 'text-amber-600' : isCompleted ? 'text-slate-900' : 'text-slate-400'
-                          }`}>
+                          <p
+                            className={`font-semibold ${
+                              isCurrent ? 'text-amber-600' : isCompleted ? 'text-slate-900' : 'text-slate-400'
+                            }`}>
                             {step.label}
                           </p>
-                          <p className={`text-sm mt-0.5 ${
-                            isCompleted ? 'text-slate-500' : 'text-slate-400'
-                          }`}>
+                          <p className={`text-sm mt-0.5 ${isCompleted ? 'text-slate-500' : 'text-slate-400'}`}>
                             {step.description}
                           </p>
                           {/* Resi info pada step dikirim */}
@@ -292,8 +335,7 @@ export default function OrderDetailPage() {
                               No. Resi: <span className="font-mono font-semibold">{order.resi}</span>
                               <button
                                 onClick={() => copyToClipboard(order.resi!)}
-                                className="ml-1 p-0.5 hover:bg-blue-100 rounded transition-colors"
-                              >
+                                className="ml-1 p-0.5 hover:bg-blue-100 rounded transition-colors">
                                 {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
                               </button>
                             </div>
@@ -350,7 +392,9 @@ export default function OrderDetailPage() {
                 <p className="font-semibold text-slate-900">{order.alamatUser.namaPenerima}</p>
                 <p>{order.alamatUser.nomorTelepon}</p>
                 <p>{order.alamatUser.alamatLengkap}</p>
-                <p>{order.alamatUser.kota}, {order.alamatUser.provinsi} {order.alamatUser.kodePos}</p>
+                <p>
+                  {order.alamatUser.kota}, {order.alamatUser.provinsi} {order.alamatUser.kodePos}
+                </p>
               </div>
             </div>
 
@@ -365,10 +409,17 @@ export default function OrderDetailPage() {
 
               {/* Metode pembayaran badge */}
               <div className="mb-4">
-                <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold ${
-                  isCOD ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'
-                }`}>
-                  {isCOD ? <Banknote className="w-3.5 h-3.5" /> : order.metodePembayaran === 'qris' ? <QrCode className="w-3.5 h-3.5" /> : <CreditCard className="w-3.5 h-3.5" />}
+                <span
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold ${
+                    isCOD ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'
+                  }`}>
+                  {isCOD ? (
+                    <Banknote className="w-3.5 h-3.5" />
+                  ) : order.metodePembayaran === 'qris' ? (
+                    <QrCode className="w-3.5 h-3.5" />
+                  ) : (
+                    <CreditCard className="w-3.5 h-3.5" />
+                  )}
                   {order.metodePembayaran === 'cod' && 'COD (Bayar di Tempat)'}
                   {order.metodePembayaran === 'transfer_bank' && 'Transfer Bank'}
                   {order.metodePembayaran === 'ewallet' && 'E-Wallet'}
@@ -380,7 +431,10 @@ export default function OrderDetailPage() {
               {isCOD && (
                 <div className="p-3 bg-green-50 rounded-xl border border-green-100 text-sm text-green-700">
                   <p className="font-medium">Bayar saat barang diterima</p>
-                  <p className="text-green-600 mt-1">Siapkan uang pas sebesar <span className="font-bold">Rp {parseFloat(order.totalBayar).toLocaleString('id-ID')}</span></p>
+                  <p className="text-green-600 mt-1">
+                    Siapkan uang pas sebesar{' '}
+                    <span className="font-bold">Rp {parseFloat(order.totalBayar).toLocaleString('id-ID')}</span>
+                  </p>
                 </div>
               )}
 
@@ -389,7 +443,9 @@ export default function OrderDetailPage() {
                   <p className="font-medium">Transfer ke rekening:</p>
                   <div className="flex items-center justify-between bg-white rounded-lg px-3 py-2 border border-blue-200">
                     <span className="font-mono font-bold text-blue-900">{pengaturan.nomorRekening}</span>
-                    <button onClick={() => copyToClipboard(pengaturan.nomorRekening!)} className="p-1 hover:bg-blue-50 rounded transition-colors">
+                    <button
+                      onClick={() => copyToClipboard(pengaturan.nomorRekening!)}
+                      className="p-1 hover:bg-blue-50 rounded transition-colors">
                       {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
                     </button>
                   </div>
@@ -401,7 +457,9 @@ export default function OrderDetailPage() {
                   <p className="font-medium">Transfer ke E-Wallet:</p>
                   <div className="flex items-center justify-between bg-white rounded-lg px-3 py-2 border border-purple-200">
                     <span className="font-mono font-bold text-purple-900">{pengaturan.nomorEwallet}</span>
-                    <button onClick={() => copyToClipboard(pengaturan.nomorEwallet!)} className="p-1 hover:bg-purple-50 rounded transition-colors">
+                    <button
+                      onClick={() => copyToClipboard(pengaturan.nomorEwallet!)}
+                      className="p-1 hover:bg-purple-50 rounded transition-colors">
                       {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
                     </button>
                   </div>
@@ -420,8 +478,12 @@ export default function OrderDetailPage() {
               {/* Info Midtrans untuk ewallet/qris */}
               {isMidtrans && showCheckMidtransButton && (
                 <div className="p-3 bg-indigo-50 rounded-xl border border-indigo-100 text-sm text-indigo-700 space-y-2">
-                  <p className="font-medium">Pembayaran via Midtrans ({order.metodePembayaran === 'ewallet' ? 'E-Wallet' : 'QRIS'})</p>
-                  <p className="text-indigo-600">Jika Anda sudah menyelesaikan pembayaran, klik tombol di bawah untuk memperbarui status.</p>
+                  <p className="font-medium">
+                    Pembayaran via Midtrans ({order.metodePembayaran === 'ewallet' ? 'E-Wallet' : 'QRIS'})
+                  </p>
+                  <p className="text-indigo-600">
+                    Jika Anda sudah menyelesaikan pembayaran, klik tombol di bawah untuk memperbarui status.
+                  </p>
                 </div>
               )}
 
@@ -442,7 +504,11 @@ export default function OrderDetailPage() {
                     <p className="text-sm font-medium">Menunggu verifikasi admin</p>
                   </div>
                   <div className="bg-white rounded-lg border border-amber-200 overflow-hidden">
-                    <img src={order.buktiPembayaranUrl!} alt="Bukti Pembayaran" className="w-full max-h-48 object-contain" />
+                    <img
+                      src={order.buktiPembayaranUrl!}
+                      alt="Bukti Pembayaran"
+                      className="w-full max-h-48 object-contain"
+                    />
                   </div>
                 </div>
               )}
@@ -451,8 +517,7 @@ export default function OrderDetailPage() {
               {showUploadButton && (
                 <Link
                   href={`/pesanan-saya/${order.idPesanan}/upload-bukti`}
-                  className="mt-4 w-full flex items-center justify-center gap-2 bg-amber-500 text-white py-3 rounded-xl font-medium hover:bg-amber-600 transition-all hover:shadow-lg hover:-translate-y-0.5"
-                >
+                  className="mt-4 w-full flex items-center justify-center gap-2 bg-amber-500 text-white py-3 rounded-xl font-medium hover:bg-amber-600 transition-all hover:shadow-lg hover:-translate-y-0.5">
                   <Upload className="w-4 h-4" />
                   Upload Bukti Pembayaran
                 </Link>
@@ -463,8 +528,7 @@ export default function OrderDetailPage() {
                 <button
                   onClick={handleCheckPaymentStatus}
                   disabled={checkingStatus}
-                  className="mt-4 w-full flex items-center justify-center gap-2 bg-indigo-500 text-white py-3 rounded-xl font-medium hover:bg-indigo-600 transition-all hover:shadow-lg hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
+                  className="mt-4 w-full flex items-center justify-center gap-2 bg-indigo-500 text-white py-3 rounded-xl font-medium hover:bg-indigo-600 transition-all hover:shadow-lg hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed">
                   {checkingStatus ? (
                     <>
                       <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -502,7 +566,7 @@ export default function OrderDetailPage() {
           </div>
         </div>
       </div>
-      
+
       <Footer />
     </div>
   );

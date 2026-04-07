@@ -9,7 +9,7 @@ export async function POST(request: Request) {
     // Validasi input dengan Zod
     const parsed = kontakSchema.safeParse(body);
     if (!parsed.success) {
-      const errors = parsed.error.issues.map(e => e.message).join(', ');
+      const errors = parsed.error.issues.map((e) => e.message).join(', ');
       return NextResponse.json({ error: errors }, { status: 400 });
     }
 

@@ -106,13 +106,13 @@ function PesananSayaContent() {
   };
 
   const getStatusLabel = (status: string) => {
-    return status.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+    return status.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase());
   };
 
   return (
     <div className="min-h-screen bg-[#FDFBF7]">
       <Navbar />
-      
+
       <div className="pt-24 pb-12 px-6 lg:px-8 max-w-7xl mx-auto">
         <h1 className="text-3xl font-bold text-slate-900 mb-6">Pesanan Saya</h1>
 
@@ -120,7 +120,7 @@ function PesananSayaContent() {
         <div className="mb-6 -mx-6 px-6 overflow-x-auto scrollbar-hide">
           <div className="flex gap-2 min-w-max pb-2">
             {STATUS_TABS.map((tab) => {
-              const count = tab.key === '' ? totalAll : (statusCounts[tab.key] || 0);
+              const count = tab.key === '' ? totalAll : statusCounts[tab.key] || 0;
               const isActive = activeStatus === tab.key;
               const Icon = tab.icon;
               return (
@@ -131,14 +131,14 @@ function PesananSayaContent() {
                     isActive
                       ? 'bg-amber-500 text-white shadow-md shadow-amber-500/25'
                       : 'bg-white text-slate-600 border border-slate-200 hover:border-amber-300 hover:text-amber-600'
-                  }`}
-                >
+                  }`}>
                   <Icon className="w-4 h-4" />
                   {tab.label}
                   {count > 0 && (
-                    <span className={`ml-1 px-2 py-0.5 rounded-full text-xs font-bold ${
-                      isActive ? 'bg-white/25 text-white' : 'bg-slate-100 text-slate-600'
-                    }`}>
+                    <span
+                      className={`ml-1 px-2 py-0.5 rounded-full text-xs font-bold ${
+                        isActive ? 'bg-white/25 text-white' : 'bg-slate-100 text-slate-600'
+                      }`}>
                       {count}
                     </span>
                   )}
@@ -151,7 +151,7 @@ function PesananSayaContent() {
         {/* Order List */}
         {loading ? (
           <div className="space-y-4">
-            {[1, 2, 3].map(i => (
+            {[1, 2, 3].map((i) => (
               <div key={i} className="animate-pulse bg-white rounded-xl border border-slate-100 p-6">
                 <div className="flex justify-between mb-4">
                   <div className="h-5 bg-slate-200 rounded w-1/4" />
@@ -168,8 +168,7 @@ function PesananSayaContent() {
                 <Link
                   key={order.idPesanan}
                   href={`/pesanan-saya/${order.idPesanan}`}
-                  className="block bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-md hover:border-amber-200 transition-all group"
-                >
+                  className="block bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-md hover:border-amber-200 transition-all group">
                   <div className="p-6">
                     <div className="flex flex-col md:flex-row md:items-center justify-between mb-4 gap-4">
                       <div className="flex items-center gap-4">
@@ -188,10 +187,12 @@ function PesananSayaContent() {
                         </div>
                       </div>
                       <div className="flex flex-wrap gap-2">
-                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(order.statusPembayaran)}`}>
+                        <span
+                          className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(order.statusPembayaran)}`}>
                           {getStatusLabel(order.statusPembayaran)}
                         </span>
-                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(order.statusPesanan)}`}>
+                        <span
+                          className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(order.statusPesanan)}`}>
                           {getStatusLabel(order.statusPesanan)}
                         </span>
                       </div>
@@ -203,9 +204,9 @@ function PesananSayaContent() {
                           <div className="flex items-center gap-3">
                             <div className="w-12 h-16 bg-slate-100 rounded overflow-hidden flex-shrink-0">
                               {order.detailPesanan[0]?.buku.coverUrl && (
-                                <img 
-                                  src={order.detailPesanan[0].buku.coverUrl} 
-                                  alt={order.detailPesanan[0].buku.judul} 
+                                <img
+                                  src={order.detailPesanan[0].buku.coverUrl}
+                                  alt={order.detailPesanan[0].buku.judul}
                                   className="w-full h-full object-cover"
                                 />
                               )}
@@ -222,7 +223,7 @@ function PesananSayaContent() {
                             </div>
                           </div>
                         </div>
-                        
+
                         <div className="flex items-center justify-between md:justify-end gap-6">
                           <div className="text-right">
                             <p className="text-sm text-slate-500">Total Belanja</p>
@@ -253,8 +254,7 @@ function PesananSayaContent() {
                 {!activeStatus && (
                   <Link
                     href="/katalog"
-                    className="inline-flex items-center gap-2 bg-amber-500 text-white px-6 py-3 rounded-full font-medium hover:bg-amber-600 transition-colors"
-                  >
+                    className="inline-flex items-center gap-2 bg-amber-500 text-white px-6 py-3 rounded-full font-medium hover:bg-amber-600 transition-colors">
                     Mulai Belanja
                   </Link>
                 )}
@@ -265,7 +265,7 @@ function PesananSayaContent() {
 
         <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
       </div>
-      
+
       <Footer />
     </div>
   );

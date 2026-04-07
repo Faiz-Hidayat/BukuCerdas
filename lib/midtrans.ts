@@ -52,15 +52,8 @@ export function verifySignature(notification: {
   signature_key: string;
 }): boolean {
   const serverKey = process.env.MIDTRANS_SERVER_KEY || '';
-  const input =
-    notification.order_id +
-    notification.status_code +
-    notification.gross_amount +
-    serverKey;
-  const expectedSignature = crypto
-    .createHash('sha512')
-    .update(input)
-    .digest('hex');
+  const input = notification.order_id + notification.status_code + notification.gross_amount + serverKey;
+  const expectedSignature = crypto.createHash('sha512').update(input).digest('hex');
   return expectedSignature === notification.signature_key;
 }
 
@@ -72,9 +65,7 @@ export function verifySignature(notification: {
 export async function getTransactionStatus(orderId: string) {
   const serverKey = process.env.MIDTRANS_SERVER_KEY || '';
   const isProduction = process.env.MIDTRANS_IS_PRODUCTION === 'true';
-  const baseUrl = isProduction
-    ? 'https://api.midtrans.com'
-    : 'https://api.sandbox.midtrans.com';
+  const baseUrl = isProduction ? 'https://api.midtrans.com' : 'https://api.sandbox.midtrans.com';
 
   const response = await fetch(`${baseUrl}/v2/${orderId}/status`, {
     method: 'GET',
@@ -113,32 +104,65 @@ export type MidtransStatusMapping = {
  * Mapping status Midtrans → status pesanan BukuCerdas.
  * Dipakai bersama oleh webhook callback dan check-status API.
  */
-export function mapMidtransStatus(
-  transactionStatus: string,
-  fraudStatus?: string
-): MidtransStatusMapping {
+export function mapMidtransStatus(transactionStatus: string, fraudStatus?: string): MidtransStatusMapping {
   if (transactionStatus === 'capture') {
     if (fraudStatus === 'accept') {
-      return { statusPesanan: 'diproses', statusPembayaran: 'terkonfirmasi', shouldRestoreStock: false, skip: false, message: 'Pembayaran berhasil (capture+accept)' };
+      return {
+        statusPesanan: 'diproses',
+        statusPembayaran: 'terkonfirmasi',
+        shouldRestoreStock: false,
+        skip: false,
+        message: 'Pembayaran berhasil (capture+accept)',
+      };
     }
     // fraud_status = challenge/deny
-    return { statusPesanan: 'dibatalkan', statusPembayaran: 'dibatalkan', shouldRestoreStock: true, skip: false, message: `Pembayaran ditolak (capture+${fraudStatus})` };
+    return {
+      statusPesanan: 'dibatalkan',
+      statusPembayaran: 'dibatalkan',
+      shouldRestoreStock: true,
+      skip: false,
+      message: `Pembayaran ditolak (capture+${fraudStatus})`,
+    };
   }
 
   if (transactionStatus === 'settlement') {
-    return { statusPesanan: 'diproses', statusPembayaran: 'terkonfirmasi', shouldRestoreStock: false, skip: false, message: 'Pembayaran berhasil (settlement)' };
+    return {
+      statusPesanan: 'diproses',
+      statusPembayaran: 'terkonfirmasi',
+      shouldRestoreStock: false,
+      skip: false,
+      message: 'Pembayaran berhasil (settlement)',
+    };
   }
 
   if (transactionStatus === 'pending') {
-    return { statusPesanan: null, statusPembayaran: null, shouldRestoreStock: false, skip: true, message: 'Pembayaran masih pending' };
+    return {
+      statusPesanan: null,
+      statusPembayaran: null,
+      shouldRestoreStock: false,
+      skip: true,
+      message: 'Pembayaran masih pending',
+    };
   }
 
   if (['deny', 'cancel', 'expire', 'failure'].includes(transactionStatus)) {
-    return { statusPesanan: 'dibatalkan', statusPembayaran: 'dibatalkan', shouldRestoreStock: true, skip: false, message: `Pembayaran gagal (${transactionStatus})` };
+    return {
+      statusPesanan: 'dibatalkan',
+      statusPembayaran: 'dibatalkan',
+      shouldRestoreStock: true,
+      skip: false,
+      message: `Pembayaran gagal (${transactionStatus})`,
+    };
   }
 
   // refund, chargeback, dll — skip
-  return { statusPesanan: null, statusPembayaran: null, shouldRestoreStock: false, skip: true, message: `Status "${transactionStatus}" tidak dihandle` };
+  return {
+    statusPesanan: null,
+    statusPembayaran: null,
+    shouldRestoreStock: false,
+    skip: true,
+    message: `Status "${transactionStatus}" tidak dihandle`,
+  };
 }
 
 /** Client key publik untuk frontend Snap JS embed */

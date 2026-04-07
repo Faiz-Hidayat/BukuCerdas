@@ -2,10 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth';
 
-export async function PUT(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const user = await getCurrentUser();
     if (!user) {
@@ -43,9 +40,12 @@ export async function PUT(
 
     // C1: Qty tidak boleh melebihi stok
     if (qty > item.buku.stok) {
-      return NextResponse.json({
-        error: `Stok tersedia hanya ${item.buku.stok}`
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          error: `Stok tersedia hanya ${item.buku.stok}`,
+        },
+        { status: 400 },
+      );
     }
 
     await prisma.itemKeranjang.update({
@@ -59,10 +59,7 @@ export async function PUT(
   }
 }
 
-export async function DELETE(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const user = await getCurrentUser();
     if (!user) {

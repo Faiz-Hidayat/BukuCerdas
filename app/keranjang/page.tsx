@@ -57,11 +57,7 @@ export default function KeranjangPage() {
         body: JSON.stringify({ jumlah: newQuantity }),
       });
       if (res.ok) {
-        setCartItems((prev) =>
-          prev.map((item) =>
-            item.idItem === idItem ? { ...item, jumlah: newQuantity } : item
-          )
-        );
+        setCartItems((prev) => prev.map((item) => (item.idItem === idItem ? { ...item, jumlah: newQuantity } : item)));
       }
     } catch (error) {
       console.error('Error updating cart', error);
@@ -85,10 +81,7 @@ export default function KeranjangPage() {
     }
   };
 
-  const subtotal = cartItems.reduce(
-    (acc, item) => acc + Number(item.buku.harga) * item.jumlah,
-    0
-  );
+  const subtotal = cartItems.reduce((acc, item) => acc + Number(item.buku.harga) * item.jumlah, 0);
 
   if (loading) {
     return (
@@ -107,7 +100,7 @@ export default function KeranjangPage() {
   return (
     <div className="min-h-screen bg-[#FDFBF7]">
       <Navbar />
-      
+
       <div className="pt-24 pb-12 px-6 lg:px-8 max-w-7xl mx-auto">
         <h1 className="text-3xl font-bold text-slate-900 mb-8">Keranjang Belanja</h1>
 
@@ -124,22 +117,17 @@ export default function KeranjangPage() {
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       exit={{ opacity: 0 }}
-                      className="flex gap-4 py-4 border-b border-slate-100 last:border-0"
-                    >
+                      className="flex gap-4 py-4 border-b border-slate-100 last:border-0">
                       <div className="w-20 h-28 bg-slate-100 rounded-lg overflow-hidden flex-shrink-0">
                         {item.buku.coverUrl ? (
-                          <img
-                            src={item.buku.coverUrl}
-                            alt={item.buku.judul}
-                            className="w-full h-full object-cover"
-                          />
+                          <img src={item.buku.coverUrl} alt={item.buku.judul} className="w-full h-full object-cover" />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center text-slate-400 text-xs">
                             No Cover
                           </div>
                         )}
                       </div>
-                      
+
                       <div className="flex-1 flex flex-col justify-between">
                         <div>
                           <Link href={`/buku/${item.buku.idBuku}`}>
@@ -151,33 +139,33 @@ export default function KeranjangPage() {
                             Rp {parseFloat(item.buku.harga).toLocaleString('id-ID')}
                           </p>
                         </div>
-                        
+
                         <div className="flex items-center justify-between mt-4">
                           <div className="flex items-center gap-3 bg-slate-50 rounded-lg p-1">
                             <button
                               onClick={() => updateQuantity(item.idItem, item.jumlah - 1)}
                               disabled={item.jumlah <= 1 || updating === item.idItem}
-                              className="p-1 hover:bg-white rounded-md transition-colors disabled:opacity-50"
-                            >
+                              className="p-1 hover:bg-white rounded-md transition-colors disabled:opacity-50">
                               <Minus className="w-4 h-4 text-slate-600" />
                             </button>
-                            <span className="text-sm font-medium w-8 text-center">
-                              {item.jumlah}
-                            </span>
+                            <span className="text-sm font-medium w-8 text-center">{item.jumlah}</span>
                             <button
                               onClick={() => updateQuantity(item.idItem, item.jumlah + 1)}
                               disabled={item.jumlah >= item.buku.stok || updating === item.idItem}
-                              className="p-1 hover:bg-white rounded-md transition-colors disabled:opacity-50"
-                            >
+                              className="p-1 hover:bg-white rounded-md transition-colors disabled:opacity-50">
                               <Plus className="w-4 h-4 text-slate-600" />
                             </button>
                           </div>
-                          
+
                           <button
-                            onClick={() => toast('Yakin hapus item ini?', { action: { label: 'Hapus', onClick: () => removeItem(item.idItem) }, cancel: { label: 'Batal', onClick: () => {} } })}
+                            onClick={() =>
+                              toast('Yakin hapus item ini?', {
+                                action: { label: 'Hapus', onClick: () => removeItem(item.idItem) },
+                                cancel: { label: 'Batal', onClick: () => {} },
+                              })
+                            }
                             className="text-slate-400 hover:text-red-500 transition-colors p-2"
-                            title="Hapus Item"
-                          >
+                            title="Hapus Item">
                             <Trash2 className="w-5 h-5" />
                           </button>
                         </div>
@@ -192,7 +180,7 @@ export default function KeranjangPage() {
             <div className="w-full lg:w-1/3">
               <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 sticky top-24">
                 <h2 className="text-lg font-semibold text-slate-900 mb-4">Ringkasan Belanja</h2>
-                
+
                 <div className="space-y-3 mb-6">
                   <div className="flex justify-between text-slate-600">
                     <span>Total Item</span>
@@ -202,15 +190,12 @@ export default function KeranjangPage() {
                     <span>Total Harga</span>
                     <span>Rp {subtotal.toLocaleString('id-ID')}</span>
                   </div>
-                  <p className="text-xs text-slate-500 mt-2">
-                    *Ongkir dan pajak akan dihitung saat checkout
-                  </p>
+                  <p className="text-xs text-slate-500 mt-2">*Ongkir dan pajak akan dihitung saat checkout</p>
                 </div>
 
                 <Link
                   href="/checkout"
-                  className="w-full flex items-center justify-center gap-2 bg-slate-900 text-white py-3 rounded-xl font-medium hover:bg-slate-800 transition-all hover:shadow-lg hover:-translate-y-0.5"
-                >
+                  className="w-full flex items-center justify-center gap-2 bg-slate-900 text-white py-3 rounded-xl font-medium hover:bg-slate-800 transition-all hover:shadow-lg hover:-translate-y-0.5">
                   Lanjut ke Checkout
                   <ArrowRight className="w-4 h-4" />
                 </Link>
@@ -226,15 +211,14 @@ export default function KeranjangPage() {
             <p className="text-slate-500 mb-8">Wah, keranjangmu masih kosong nih. Yuk cari buku favoritmu!</p>
             <Link
               href="/katalog"
-              className="inline-flex items-center gap-2 bg-amber-500 text-white px-6 py-3 rounded-full font-medium hover:bg-amber-600 transition-colors"
-            >
+              className="inline-flex items-center gap-2 bg-amber-500 text-white px-6 py-3 rounded-full font-medium hover:bg-amber-600 transition-colors">
               Cari Buku
               <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
         )}
       </div>
-      
+
       <Footer />
     </div>
   );
