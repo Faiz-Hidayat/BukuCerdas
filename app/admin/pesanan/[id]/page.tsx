@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
-import { ArrowLeft, Printer, CheckCircle, XCircle, Truck, Package } from 'lucide-react';
+import { ArrowLeft, Printer, CheckCircle, XCircle, Truck, Package, AlertCircle, RefreshCcw } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import Invoice from './Invoice';
@@ -20,6 +20,8 @@ interface OrderDetail {
   pajakNominal: string;
   totalBayar: string;
   buktiPembayaranUrl: string | null;
+  alasanPembatalan: string | null;
+  resi: string | null;
   user: {
     namaLengkap: string;
     email: string;
@@ -45,6 +47,8 @@ interface OrderDetail {
   }[];
 }
 
+import { VALID_TRANSITIONS } from '../../../../lib/pesanan-status';
+
 export default function DetailPesananPage() {
   const params = useParams();
   const router = useRouter();
@@ -53,12 +57,28 @@ export default function DetailPesananPage() {
 
   const [order, setOrder] = useState<OrderDetail | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const [resiInput, setResiInput] = useState('');
+  const [statusSelect, setStatusSelect] = useState('');
+
+  // state for cancellation modal
+  const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
+  const [cancelReasonInput, setCancelReasonInput] = useState('');
+  const [pendingCancelPayload, setPendingCancelPayload] = useState<any>(null);
 
   useEffect(() => {
     if (params.id) {
       fetchOrder(params.id as string);
     }
   }, [params.id]);
+
+  useEffect(() => {
+    if (order) {
+      setStatusSelect(order.statusPesanan);
+      setResiInput(order.resi || '');
+    }
+  }, [order]);
 
   useEffect(() => {
     if (isPrintMode && order && !loading) {
@@ -70,21 +90,35 @@ export default function DetailPesananPage() {
 
   const fetchOrder = async (id: string) => {
     try {
+      setError(null);
       const res = await fetch(`/api/admin/pesanan/${id}`);
-      if (res.ok) {
-        const data = await res.json();
-        setOrder(data);
+      if (!res.ok) {
+         throw new Error('Pesanan tidak ditemukan atau gagal dimuat');
       }
-    } catch (error) {
-      console.error('Failed to fetch order', error);
+      const data = await res.json();
+      setOrder(data);
+    } catch (err: any) {
+      console.error('Failed to fetch order', err);
+      setError(err.message || 'Gagal memuat detail pesanan');
     } finally {
       setLoading(false);
     }
   };
 
-  const updateStatus = async (field: 'statusPembayaran' | 'statusPesanan', value: string) => {
+  const updateStatus = async (payload: { statusPembayaran?: string; statusPesanan?: string; alasanPembatalan?: string }) => {
     if (!order) return;
-    toast(`Ubah status menjadi ${value}?`, {
+
+    if (payload.statusPesanan === 'dibatalkan') {
+      const reason = window.prompt('Masukkan alasan pembatalan (wajib):');
+      if (!reason) {
+        toast.info('Pembatalan digagalkan karena alasan tidak diisi');
+        return;
+      }
+      payload.alasanPembatalan = reason;
+    }
+
+    const valueLabel = payload.statusPembayaran || payload.statusPesanan;
+    toast(`Ubah status menjadi ${valueLabel}?`, {
       action: {
         label: 'Ubah',
         onClick: async () => {
@@ -92,13 +126,99 @@ export default function DetailPesananPage() {
             const res = await fetch(`/api/admin/pesanan/${order.idPesanan}`, {
               method: 'PUT',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ [field]: value }),
+              body: JSON.stringify(payload),
             });
             if (res.ok) {
               fetchOrder(order.idPesanan.toString());
               toast.success('Status berhasil diubah');
             } else {
-              toast.error('Gagal mengupdate status');
+              const err = await res.json();
+              toast.error(err.error || 'Gagal mengupdate status');
+            }
+          } catch (error) {
+            console.error('Error updating status', error);
+          }
+        },
+      },
+      cancel: { label: 'Batal', onClick: () => {} },
+    });
+  };
+
+  const submitCancelAction = async () => {
+    if (!order || !pendingCancelPayload) return;
+    if (!cancelReasonInput.trim()) {
+      toast.error('Alasan pembatalan wajid diisi');
+      return;
+    }
+
+    const body = {
+      ...pendingCancelPayload,
+      alasanPembatalan: cancelReasonInput,
+    };
+
+    try {
+      const res = await fetch(`/api/admin/pesanan/${order.idPesanan}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+
+      if (res.ok) {
+        fetchOrder(order.idPesanan.toString());
+        toast.success('Pesanan berhasil dibatalkan');
+        setIsCancelModalOpen(false);
+        setCancelReasonInput('');
+        setPendingCancelPayload(null);
+      } else {
+        const err = await res.json();
+        toast.error(err.error || 'Gagal membatalkan pesanan');
+      }
+    } catch (error) {
+      console.error('Error cancelling order', error);
+    }
+  };
+
+  const handleUpdatePengiriman = async () => {
+    if (!order) return;
+    if (statusSelect === 'dikirim' && !resiInput && !order.resi) {
+      toast.error('Nomor resi wajib diisi sebelum pesanan dikirim');
+      return;
+    }
+
+    let alasan = undefined;
+    if (statusSelect === 'dibatalkan') {
+      const reason = window.prompt('Masukkan alasan pembatalan (wajib):');
+      if (!reason) {
+        toast.info('Pembatalan digagalkan karena alasan tidak diisi');
+        return;
+      }
+      alasan = reason;
+    }
+
+    toast(`Ubah status pengiriman menjadi ${statusSelect.replace('_', ' ').toUpperCase()}?`, {
+      action: {
+        label: 'Simpan',
+        onClick: async () => {
+          try {
+            const body: any = { statusPesanan: statusSelect };
+            if (statusSelect === 'dikirim') {
+              body.resi = resiInput || order.resi;
+            }
+            if (alasan) {
+              body.alasanPembatalan = alasan;
+            }
+
+            const res = await fetch(`/api/admin/pesanan/${order.idPesanan}`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(body),
+            });
+            if (res.ok) {
+              fetchOrder(order.idPesanan.toString());
+              toast.success('Status pengiriman berhasil diupdate');
+            } else {
+              const err = await res.json();
+              toast.error(err.error || 'Gagal mengupdate status');
             }
           } catch (error) {
             console.error('Error updating status', error);
@@ -117,8 +237,47 @@ export default function DetailPesananPage() {
     }).format(Number(val));
   };
 
-  if (loading) return <div className="p-8 text-center">Loading...</div>;
-  if (!order) return <div className="p-8 text-center">Pesanan tidak ditemukan</div>;
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex animate-pulse items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 bg-slate-200 rounded-full" />
+            <div>
+              <div className="h-6 w-48 bg-slate-200 rounded mb-2" />
+              <div className="h-4 w-32 bg-slate-200 rounded" />
+            </div>
+          </div>
+          <div className="w-32 h-10 bg-slate-200 rounded-lg" />
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-pulse">
+          <div className="lg:col-span-2 space-y-6">
+             <div className="h-[400px] bg-slate-200 rounded-xl" />
+          </div>
+          <div className="space-y-6">
+             <div className="h-[200px] bg-slate-200 rounded-xl" />
+             <div className="h-[300px] bg-slate-200 rounded-xl" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !order) {
+    return (
+      <div className="flex flex-col items-center justify-center p-12 bg-white rounded-xl shadow-sm border border-slate-100">
+        <AlertCircle className="w-12 h-12 text-red-500 mb-4" />
+        <h3 className="text-xl font-bold text-slate-800 mb-2">Gagal Memuat Pesanan</h3>
+        <p className="text-slate-500 mb-6">{error || 'Pesanan tidak ditemukan'}</p>
+        <button
+          onClick={() => window.location.reload()}
+          className="flex items-center gap-2 px-6 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors font-medium">
+          <RefreshCcw className="w-4 h-4" />
+          Coba Lagi
+        </button>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -205,14 +364,14 @@ export default function DetailPesananPage() {
                   </div>
                   <div className="mt-4 flex gap-3">
                     <button
-                      onClick={() => updateStatus('statusPembayaran', 'terkonfirmasi')}
+                      onClick={() => updateStatus({ statusPembayaran: 'terkonfirmasi', statusPesanan: 'diproses' })}
                       disabled={order.statusPembayaran === 'terkonfirmasi'}
                       className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed">
                       <CheckCircle className="w-4 h-4" />
                       Konfirmasi Pembayaran
                     </button>
                     <button
-                      onClick={() => updateStatus('statusPembayaran', 'dibatalkan')}
+                      onClick={() => updateStatus({ statusPembayaran: 'dibatalkan', statusPesanan: 'dibatalkan' })}
                       disabled={order.statusPembayaran === 'dibatalkan'}
                       className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed">
                       <XCircle className="w-4 h-4" />
@@ -244,18 +403,51 @@ export default function DetailPesananPage() {
                     {order.statusPembayaran.replace('_', ' ').toUpperCase()}
                   </div>
                 </div>
-
+                  {order.alasanPembatalan && (
+                    <div>
+                      <label className="text-xs font-medium text-red-500 uppercase">Alasan Batal</label>
+                      <div className="mt-1 px-3 py-2 rounded-lg text-sm font-medium border bg-red-50 border-red-200 text-red-700">
+                        {order.alasanPembatalan}
+                      </div>
+                    </div>
+                  )}
                 <div>
                   <label className="text-xs font-medium text-slate-500 uppercase">Pengiriman</label>
-                  <select
-                    value={order.statusPesanan}
-                    onChange={(e) => updateStatus('statusPesanan', e.target.value)}
-                    className="mt-1 w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
-                    <option value="diproses">Diproses</option>
-                    <option value="dikirim">Dikirim</option>
-                    <option value="selesai">Selesai</option>
-                    <option value="dibatalkan">Dibatalkan</option>
-                  </select>
+                  <div className="flex gap-2 mt-1">
+                    <select
+                      value={statusSelect}
+                      onChange={(e) => setStatusSelect(e.target.value)}
+                      className="flex-1 px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
+                      <option value={order.statusPesanan}>{order.statusPesanan.replace(/_/g, ' ').toUpperCase()}</option>
+                      {VALID_TRANSITIONS[order.statusPesanan]?.map((v) => (
+                        <option key={v} value={v}>{v.replace(/_/g, ' ').toUpperCase()}</option>
+                      ))}
+                    </select>
+                  </div>
+                  {statusSelect === 'dikirim' && (
+                    <div className="mt-3">
+                      <label className="text-xs font-medium text-slate-500">Nomor Resi</label>
+                      <input 
+                        type="text" 
+                        value={resiInput} 
+                        onChange={(e) => setResiInput(e.target.value)} 
+                        placeholder="Masukkan nomor resi..."
+                        className="mt-1 w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
+                      />
+                    </div>
+                  )}
+                  {statusSelect !== order.statusPesanan && (
+                    <button 
+                      onClick={() => handleUpdatePengiriman()}
+                      className="mt-3 w-full px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition">
+                      Simpan Pengiriman
+                    </button>
+                  )}
+                  {order.statusPesanan === 'dikirim' && order.resi && statusSelect === order.statusPesanan && (
+                    <div className="mt-3 px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-600 break-all">
+                      <span className="font-semibold text-slate-800">Resi:</span> {order.resi}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -304,6 +496,44 @@ export default function DetailPesananPage() {
         </div>
       </div>
       <Invoice order={order} />
+      {/* Cancel Modal */}
+      {isCancelModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white rounded-xl shadow-lg w-full max-w-md p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg font-bold text-slate-800">Alasan Pembatalan</h2>
+              <button onClick={() => setIsCancelModalOpen(false)} className="text-slate-400 hover:text-slate-600 transition">
+                <XCircle size={20} />
+              </button>
+            </div>
+            <p className="text-sm text-slate-600 mb-4">
+              Silakan masukkan alasan pesanan ini dibatalkan. Alasan ini akan ditampilkan kepada customer.
+            </p>
+            <textarea
+              value={cancelReasonInput}
+              onChange={(e) => setCancelReasonInput(e.target.value)}
+              className="w-full p-3 border border-slate-200 rounded-lg text-sm text-slate-700 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none resize-none mb-6"
+              rows={4}
+              placeholder="Contoh: Stok barang habis, atau alamat pengiriman tidak valid..."
+            />
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setIsCancelModalOpen(false)}
+                className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg transition"
+              >
+                Batal
+              </button>
+              <button
+                onClick={submitCancelAction}
+                disabled={!cancelReasonInput.trim()}
+                className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Konfirmasi Pembatalan
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
