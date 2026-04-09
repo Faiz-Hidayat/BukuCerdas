@@ -9,6 +9,11 @@ import BestSellers from './(marketing)/_components/BestSellers';
 import Testimonials from './(marketing)/_components/Testimonials';
 import Footer from './(marketing)/_components/Footer';
 
+export const metadata = {
+  title: 'BukuCerdas | Beranda',
+  description: 'Toko buku online berkualitas dengan berbagai kategori buku menarik dan pengiriman cepat.',
+};
+
 export default function HomePage() {
   return (
     <div className="min-h-screen">

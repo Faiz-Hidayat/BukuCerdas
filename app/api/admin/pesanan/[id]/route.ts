@@ -50,7 +50,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
       return NextResponse.json({ error: errors }, { status: 400 });
     }
 
-    const { statusPembayaran, statusPesanan: statusPesananBaru, resi } = parsed.data;
+    const { statusPembayaran, statusPesanan: statusPesananBaru, resi, alasanPembatalan } = parsed.data;
 
     // Ambil pesanan saat ini
     const pesanan = await prisma.pesanan.findUnique({
@@ -96,6 +96,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     if (statusPembayaran) dataToUpdate.statusPembayaran = statusPembayaran;
     if (statusPesananBaru) dataToUpdate.statusPesanan = statusPesananBaru;
     if (resi) dataToUpdate.resi = resi;
+    if (alasanPembatalan !== undefined) dataToUpdate.alasanPembatalan = alasanPembatalan;
 
     // Jika status baru = dibatalkan → kembalikan stok dalam transaction (J2, 12.9)
     if (statusPesananBaru === 'dibatalkan') {

@@ -41,8 +41,7 @@ export async function POST(request: Request) {
     }
 
     // G2: Hanya untuk metode midtrans-compatible dan status menunggu_pembayaran
-    const midtransMethods = ['ewallet', 'qris'];
-    if (!midtransMethods.includes(pesanan.metodePembayaran)) {
+    if (pesanan.metodePembayaran !== 'midtrans') {
       return NextResponse.json({ error: 'Metode pembayaran tidak mendukung Midtrans' }, { status: 400 });
     }
 

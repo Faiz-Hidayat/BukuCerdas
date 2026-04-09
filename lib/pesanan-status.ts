@@ -7,7 +7,7 @@ export const VALID_TRANSITIONS: Record<string, string[]> = {
   menunggu_verifikasi: ['diproses', 'menunggu_pembayaran', 'dibatalkan'],
   menunggu_konfirmasi: ['diproses', 'dibatalkan'], // backward compat
   diproses: ['dikirim', 'dibatalkan'],
-  dikirim: ['selesai', 'dibatalkan'],
+  dikirim: ['dibatalkan'], // selesai is exclusively for users
   selesai: [], // status final
   dibatalkan: [], // status final
 };

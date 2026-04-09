@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Script from 'next/script';
 import Navbar from '../(marketing)/_components/Navbar';
 import Footer from '../(marketing)/_components/Footer';
-import { MapPin, CreditCard, Truck, CheckCircle, Plus } from 'lucide-react';
+import { MapPin, CreditCard, Truck, CheckCircle, Plus, AlertCircle, RefreshCcw } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 
@@ -59,6 +59,7 @@ export default function CheckoutPage() {
   const [ongkir, setOngkir] = useState(0);
   const [pajakPersen, setPajakPersen] = useState(11);
   const [showAddressForm, setShowAddressForm] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // New Address Form State
   const [newAddress, setNewAddress] = useState({
@@ -84,31 +85,47 @@ export default function CheckoutPage() {
   }, [selectedAddressId]);
 
   const fetchData = async () => {
+    setLoading(true);
+    setError(null);
     try {
+      // Dapatkan item yang dipilih dari URL
+      const searchParams = new URLSearchParams(window.location.search);
+      const itemsParam = searchParams.get('items');
+      const selectedItemIds = itemsParam ? itemsParam.split(',').map(Number) : [];
+
       const [cartRes, addrRes, settingsRes] = await Promise.all([
         fetch('/api/keranjang'),
         fetch('/api/user/alamat'),
-        fetch('/api/admin/pengaturan'), // Assuming public or accessible
+        fetch('/api/pengaturan'), // Public endpoint
       ]);
 
       if (cartRes.ok) {
         const cartData = await cartRes.json();
-        setCartItems(cartData.itemKeranjang || []);
-        if (!cartData.itemKeranjang || cartData.itemKeranjang.length === 0) {
-          router.push('/keranjang');
+        let items = cartData.itemKeranjang || [];
+        
+        // Filter item berdasarkan yang dipilih dari keranjang
+        if (selectedItemIds.length > 0) {
+          items = items.filter((item: CartItem) => selectedItemIds.includes(item.idItem));
         }
+
+        if (items.length === 0) {
+          router.push('/keranjang');
+          return;
+        }
+        setCartItems(items);
       } else if (cartRes.status === 401) {
         router.push('/login');
+        return;
+      } else {
+        throw new Error('Gagal memuat keranjang');
       }
 
       if (addrRes.ok) {
         const addrData = await addrRes.json();
         setAddresses(addrData);
-        const defaultAddr = addrData.find((a: Address) => a.isDefault);
-        if (defaultAddr) {
-          setSelectedAddressId(defaultAddr.idAlamat);
-        } else if (addrData.length > 0) {
-          setSelectedAddressId(addrData[0].idAlamat);
+        if (addrData.length > 0) {
+          const defaultAddr = addrData.find((a: Address) => a.isDefault);
+          setSelectedAddressId(defaultAddr ? defaultAddr.idAlamat : addrData[0].idAlamat);
         } else {
           setShowAddressForm(true);
         }
@@ -121,7 +138,8 @@ export default function CheckoutPage() {
         }
       }
     } catch (error) {
-      console.error('Error fetching data', error);
+      console.error('Error fetching checkout data', error);
+      setError('Gagal memuat data checkout. Silakan coba lagi.');
     } finally {
       setLoading(false);
     }
@@ -251,22 +269,27 @@ export default function CheckoutPage() {
     }
     setProcessing(true);
     try {
+      const searchParams = new URLSearchParams(window.location.search);
+      const itemsParam = searchParams.get('items');
+      const selectedItemIds = itemsParam ? itemsParam.split(',').map(Number) : undefined;
+      
       const res = await fetch('/api/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           idAlamat: selectedAddressId,
           metodePembayaran: paymentMethod,
+          selectedItems: selectedItemIds,
         }),
       });
 
       if (res.ok) {
         const data = await res.json();
 
-        // Jika metode e-wallet/qris → buka Midtrans Snap popup
-        if (data.metodePembayaran === 'ewallet' || data.metodePembayaran === 'qris') {
-          await openMidtransSnap(data.idPesanan);
-        } else {
+        // Jika metode midtrans → buka Midtrans Snap popup
+          if (data.metodePembayaran === 'midtrans') {
+            await openMidtransSnap(data.idPesanan);
+          } else {
           router.push(`/pesanan-saya/${data.idPesanan}`);
         }
       } else {
@@ -291,9 +314,34 @@ export default function CheckoutPage() {
         <Navbar />
         <div className="pt-24 pb-12 px-6 lg:px-8 max-w-7xl mx-auto">
           <div className="animate-pulse flex flex-col lg:flex-row gap-8">
-            <div className="w-full lg:w-2/3 h-96 bg-slate-200 rounded-xl" />
-            <div className="w-full lg:w-1/3 h-96 bg-slate-200 rounded-xl" />
+            <div className="w-full lg:w-2/3 space-y-4">
+              <div className="h-48 bg-slate-200 rounded-xl" />
+              <div className="h-48 bg-slate-200 rounded-xl" />
+            </div>
+            <div className="w-full lg:w-1/3 space-y-4">
+               <div className="h-64 bg-slate-200 rounded-xl" />
+            </div>
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-[#FDFBF7]">
+        <Navbar />
+        <div className="pt-32 pb-12 px-6 flex flex-col items-center flex-grow">
+          <AlertCircle className="w-16 h-16 text-red-500 mb-4" />
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Gagal Memuat Checkout</h2>
+          <p className="text-gray-600 mb-6 text-center max-w-md">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="flex items-center space-x-2 bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-xl transition-colors font-medium"
+          >
+            <RefreshCcw className="w-5 h-5" />
+            <span>Coba Lagi</span>
+          </button>
         </div>
       </div>
     );
@@ -438,22 +486,23 @@ export default function CheckoutPage() {
                 <CreditCard className="w-5 h-5 text-amber-500" />
                 Metode Pembayaran
               </h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {[
-                  { id: 'transfer_bank', label: 'Transfer Bank' },
-                  { id: 'ewallet', label: 'E-Wallet' },
-                  { id: 'qris', label: 'QRIS' },
-                  { id: 'cod', label: 'Bayar di Tempat (COD)' },
+                  { id: 'transfer_bank', label: 'Transfer Bank (Manual)' },
+                  { id: 'ewallet', label: 'E-Wallet (Manual)' },
+                  { id: 'qris', label: 'QRIS (Manual)' },
+                  { id: 'midtrans', label: 'Bayar Otomatis (Midtrans / Qris)' },
                 ].map((method) => (
                   <div
                     key={method.id}
                     onClick={() => setPaymentMethod(method.id)}
-                    className={`p-4 rounded-xl border-2 cursor-pointer transition-all text-center ${
+                    className={`p-4 rounded-xl border-2 cursor-pointer transition-all text-center flex flex-col items-center justify-center gap-1 ${
                       paymentMethod === method.id
                         ? 'border-amber-500 bg-amber-50/50 font-medium text-amber-900'
-                        : 'border-slate-100 hover:border-slate-200 text-slate-600'
+                        : 'border-slate-100 hover:border-slate-200 text-slate-600 hover:bg-slate-50'
                     }`}>
-                    {method.label}
+                    {method.id === 'midtrans' && <CreditCard className="w-5 h-5 mb-1 text-indigo-500" />}
+                    <span className="text-sm">{method.label}</span>
                   </div>
                 ))}
               </div>
@@ -499,11 +548,25 @@ export default function CheckoutPage() {
                   <span>Pajak ({pajakPersen}%)</span>
                   <span>Rp {pajakNominal.toLocaleString('id-ID')}</span>
                 </div>
-                <div className="flex justify-between text-slate-900 font-bold text-lg pt-3 border-t border-slate-100">
-                  <span>Total Bayar</span>
-                  <span>Rp {totalBayar.toLocaleString('id-ID')}</span>
+                  
+                  {['transfer_bank', 'ewallet', 'qris'].includes(paymentMethod) && (
+                    <div className="flex justify-between text-amber-600 text-sm mt-1">
+                      <span>Kode Unik</span>
+                      <span>+1 s/d +99 (dihitung setelah checkout)</span>
+                    </div>
+                  )}
+
+                  <div className="flex justify-between text-slate-900 font-bold text-lg pt-3 border-t border-slate-100">
+                    <span>Total Estimasi Bayar</span>
+                    <span>Rp {totalBayar.toLocaleString('id-ID')}</span>
+                  </div>
                 </div>
-              </div>
+
+                {['transfer_bank', 'ewallet', 'qris'].includes(paymentMethod) && (
+                  <p className="text-xs text-amber-600 mt-3 font-medium bg-amber-50 p-2 rounded-lg border border-amber-100">
+                    <span className="font-bold">*Penting:</span> Akan ditambahkan kode unik 2 digit pada total bayar Anda di invoice akhir untuk mempermudah verifikasi.
+                  </p>
+                )}
 
               <button
                 onClick={handleCheckout}
@@ -527,3 +590,4 @@ export default function CheckoutPage() {
     </div>
   );
 }
+

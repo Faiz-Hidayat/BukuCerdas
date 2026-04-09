@@ -81,7 +81,12 @@ export async function getTransactionStatus(orderId: string) {
     throw new Error(`Midtrans GET Status gagal (${response.status}): ${text}`);
   }
 
-  return response.json() as Promise<{
+  const data = await response.json();
+  if (data.status_code === '404') {
+    throw new Error(`Midtrans GET Status gagal (404): Transaction doesn't exist`);
+  }
+
+  return data as {
     transaction_status: string;
     fraud_status?: string;
     status_code: string;
@@ -89,7 +94,7 @@ export async function getTransactionStatus(orderId: string) {
     gross_amount: string;
     signature_key?: string;
     payment_type?: string;
-  }>;
+  };
 }
 
 export type MidtransStatusMapping = {

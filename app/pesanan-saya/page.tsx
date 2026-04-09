@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Navbar from '../(marketing)/_components/Navbar';
 import Footer from '../(marketing)/_components/Footer';
 import Pagination from '../_components/Pagination';
-import { Package, ChevronRight, Clock, CheckCircle, XCircle, Truck, ShoppingBag, Loader2 } from 'lucide-react';
+import { Package, ChevronRight, Clock, CheckCircle, XCircle, Truck, ShoppingBag, ShieldCheck } from 'lucide-react';
 
 interface Order {
   idPesanan: number;
@@ -27,7 +27,7 @@ interface Order {
 const STATUS_TABS = [
   { key: '', label: 'Semua', icon: ShoppingBag },
   { key: 'menunggu_pembayaran', label: 'Menunggu Bayar', icon: Clock },
-  { key: 'menunggu_verifikasi', label: 'Verifikasi', icon: Loader2 },
+  { key: 'menunggu_verifikasi', label: 'Verifikasi', icon: ShieldCheck },
   { key: 'diproses', label: 'Diproses', icon: Package },
   { key: 'dikirim', label: 'Dikirim', icon: Truck },
   { key: 'selesai', label: 'Selesai', icon: CheckCircle },

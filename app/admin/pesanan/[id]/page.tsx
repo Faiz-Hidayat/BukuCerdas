@@ -109,12 +109,9 @@ export default function DetailPesananPage() {
     if (!order) return;
 
     if (payload.statusPesanan === 'dibatalkan') {
-      const reason = window.prompt('Masukkan alasan pembatalan (wajib):');
-      if (!reason) {
-        toast.info('Pembatalan digagalkan karena alasan tidak diisi');
-        return;
-      }
-      payload.alasanPembatalan = reason;
+      setPendingCancelPayload(payload);
+      setIsCancelModalOpen(true);
+      return;
     }
 
     const valueLabel = payload.statusPembayaran || payload.statusPesanan;
@@ -185,14 +182,10 @@ export default function DetailPesananPage() {
       return;
     }
 
-    let alasan = undefined;
     if (statusSelect === 'dibatalkan') {
-      const reason = window.prompt('Masukkan alasan pembatalan (wajib):');
-      if (!reason) {
-        toast.info('Pembatalan digagalkan karena alasan tidak diisi');
-        return;
-      }
-      alasan = reason;
+      setPendingCancelPayload({ statusPesanan: statusSelect });
+      setIsCancelModalOpen(true);
+      return;
     }
 
     toast(`Ubah status pengiriman menjadi ${statusSelect.replace('_', ' ').toUpperCase()}?`, {
@@ -203,9 +196,6 @@ export default function DetailPesananPage() {
             const body: any = { statusPesanan: statusSelect };
             if (statusSelect === 'dikirim') {
               body.resi = resiInput || order.resi;
-            }
-            if (alasan) {
-              body.alasanPembatalan = alasan;
             }
 
             const res = await fetch(`/api/admin/pesanan/${order.idPesanan}`, {

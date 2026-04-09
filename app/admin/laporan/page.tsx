@@ -14,6 +14,7 @@ import {
   ArrowDownRight,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 interface ReportData {
   totalPendapatan: number;
@@ -81,11 +82,15 @@ export default function LaporanPage() {
       <style jsx global>{`
         @media print {
           @page {
-            margin: 20mm;
+            margin: 15mm;
             size: auto;
           }
-          body {
+          html, body {
             background: white;
+            height: auto !important;
+            overflow: visible !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
           }
           aside,
           nav,
@@ -97,6 +102,19 @@ export default function LaporanPage() {
             padding: 0 !important;
             margin: 0 !important;
             width: 100% !important;
+            height: auto !important;
+            overflow: visible !important;
+            display: block !important;
+          }
+          /* Matikan efek framer-motion saat cetak agar tidak memotong isi halaman (Chrome Bug) */
+          .print-safe-motion {
+            transform: none !important;
+            opacity: 1 !important;
+            animation: none !important;
+          }
+          .avoid-page-break {
+            page-break-inside: avoid;
+            break-inside: avoid;
           }
           .print-hidden {
             display: none !important;
@@ -199,12 +217,12 @@ export default function LaporanPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="space-y-8">
+          className="space-y-8 print-safe-motion">
           {/* Summary Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 print:grid-cols-3 gap-4 md:gap-6 print-safe-motion">
             <motion.div
               whileHover={{ y: -5 }}
-              className="bg-gradient-to-br from-emerald-500 to-teal-600 p-6 rounded-2xl shadow-lg text-white relative overflow-hidden">
+              className="bg-gradient-to-br from-emerald-500 to-teal-600 p-6 rounded-2xl shadow-lg text-white relative overflow-hidden print-safe-motion">
               <div className="absolute top-0 right-0 p-4 opacity-10">
                 <ArrowUpRight className="w-32 h-32" />
               </div>
@@ -219,12 +237,12 @@ export default function LaporanPage() {
 
             <motion.div
               whileHover={{ y: -5 }}
-              className="bg-gradient-to-br from-rose-500 to-pink-600 p-6 rounded-2xl shadow-lg text-white relative overflow-hidden">
+              className="bg-gradient-to-br from-rose-500 to-pink-600 p-6 rounded-2xl shadow-lg text-white relative overflow-hidden print-safe-motion">
               <div className="absolute top-0 right-0 p-4 opacity-10">
                 <ArrowDownRight className="w-32 h-32" />
               </div>
               <div className="relative z-10">
-                <div className="p-3 bg-white/20 backdrop-blur-sm rounded-xl w-fit mb-4">
+                <div className="p-3 bg-white/20 backdrop-blur-sm rounded-xl w-fit mb-4 print:-ml-1">
                   <TrendingDown className="w-6 h-6 text-white" />
                 </div>
                 <p className="text-rose-100 font-medium mb-1">Total Pengeluaran</p>
@@ -234,7 +252,7 @@ export default function LaporanPage() {
 
             <motion.div
               whileHover={{ y: -5 }}
-              className="bg-gradient-to-br from-blue-500 to-indigo-600 p-6 rounded-2xl shadow-lg text-white relative overflow-hidden">
+              className="bg-gradient-to-br from-blue-500 to-indigo-600 p-6 rounded-2xl shadow-lg text-white relative overflow-hidden print-safe-motion">
               <div className="absolute top-0 right-0 p-4 opacity-10">
                 <ShoppingBag className="w-32 h-32" />
               </div>
@@ -251,80 +269,112 @@ export default function LaporanPage() {
           </div>
 
           {/* Chart */}
-          <div className="bg-white/80 backdrop-blur-xl p-8 rounded-2xl shadow-xl border border-white/20">
-            <div className="flex items-center justify-between mb-8">
-              <div>
-                <h3 className="text-lg font-bold text-slate-800">Grafik Perbandingan</h3>
-                <p className="text-sm text-slate-500">
-                  Pemasukan vs Pengeluaran per {reportType === 'daily' ? 'hari' : 'bulan'}
-                </p>
-              </div>
-              <div className="flex items-center gap-4 text-sm font-medium">
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-emerald-500"></div>
-                  <span>Pemasukan</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-rose-500"></div>
-                  <span>Pengeluaran</span>
-                </div>
-              </div>
+          <div className="bg-white p-8 rounded-2xl shadow-xl border border-slate-200 print:shadow-none print:border-0 print:p-0 print:mb-8 print:block print:overflow-visible print:w-full print:h-auto avoid-page-break">
+            <div className="mb-6 print:mb-4">
+              <h3 className="text-lg font-bold text-slate-800">Grafik Perbandingan</h3>
+              <p className="text-sm text-slate-500">
+                Pemasukan vs Pengeluaran per {reportType === 'daily' ? 'hari' : 'bulan'}
+              </p>
             </div>
 
-            <div className="h-80 flex items-end gap-3 pb-2 border-b border-slate-100 overflow-x-auto">
+            <div className="h-[400px] w-full print:block print:h-auto print:min-h-min print:w-full print:overflow-visible">
               {data.chartData.length > 0 ? (
-                data.chartData.map((item, index) => {
-                  const maxVal = Math.max(...data.chartData.map((d) => Math.max(d.income, d.expense)));
-                  const incomeHeight = maxVal > 0 ? (item.income / maxVal) * 100 : 0;
-                  const expenseHeight = maxVal > 0 ? (item.expense / maxVal) * 100 : 0;
-
-                  return (
-                    <div
-                      key={index}
-                      className="flex-1 min-w-[60px] flex flex-col items-center gap-2 group h-full justify-end">
-                      <div className="relative w-full flex justify-center h-full items-end gap-1">
-                        {/* Income Bar */}
-                        <motion.div
-                          initial={{ height: 0 }}
-                          animate={{ height: `${incomeHeight}%` }}
-                          transition={{ duration: 1, delay: index * 0.05 }}
-                          className="w-full max-w-[20px] bg-emerald-500 rounded-t-sm relative group/bar">
-                          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover/bar:block bg-slate-800 text-white text-[10px] px-2 py-1 rounded whitespace-nowrap z-20">
-                            {formatCurrency(item.income)}
-                          </div>
-                        </motion.div>
-
-                        {/* Expense Bar */}
-                        <motion.div
-                          initial={{ height: 0 }}
-                          animate={{ height: `${expenseHeight}%` }}
-                          transition={{ duration: 1, delay: index * 0.05 + 0.2 }}
-                          className="w-full max-w-[20px] bg-rose-500 rounded-t-sm relative group/bar">
-                          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover/bar:block bg-slate-800 text-white text-[10px] px-2 py-1 rounded whitespace-nowrap z-20">
-                            {formatCurrency(item.expense)}
-                          </div>
-                        </motion.div>
-                      </div>
-                      <span className="text-[10px] text-slate-400 rotate-45 origin-left truncate w-full mt-2 font-medium">
-                        {reportType === 'daily'
-                          ? new Date(item.date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })
-                          : item.date}
-                      </span>
-                    </div>
-                  );
-                })
+                <div className="print:hidden h-full w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={data.chartData}
+                      margin={{ top: 20, right: 10, left: 10, bottom: 5 }}
+                      barGap={4}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                      <XAxis 
+                        dataKey="date" 
+                        axisLine={false} 
+                        tickLine={false} 
+                        tickMargin={15}
+                        tick={{ fill: '#64748b', fontSize: 12 }}
+                        tickFormatter={(value) => {
+                           if (reportType === 'daily') {
+                             return new Date(value).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+                           }
+                           return value;
+                        }}
+                      />
+                      <YAxis 
+                        axisLine={false} 
+                        tickLine={false} 
+                        tickFormatter={(value) => 
+                          new Intl.NumberFormat('id-ID', { notation: "compact", compactDisplay: "short" }).format(value)
+                        }
+                        tickMargin={15}
+                        tick={{ fill: '#64748b', fontSize: 12 }}
+                      />
+                      <Tooltip 
+                        formatter={(value: number) => formatCurrency(value)}
+                        labelFormatter={(label) => {
+                           if (reportType === 'daily') {
+                             return new Date(label).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+                           }
+                           return label;
+                        }}
+                        contentStyle={{ borderRadius: '12px', border: '1px solid #e2e8f0', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
+                        cursor={{ fill: '#f1f5f9' }}
+                      />
+                      <Legend 
+                         iconType="circle" 
+                         wrapperStyle={{ fontSize: '13px', paddingTop: '10px' }} 
+                         formatter={(value) => value === 'income' ? 'Pemasukan' : 'Pengeluaran'}
+                      />
+                      <Bar dataKey="income" name="income" fill="#10b981" radius={[4, 4, 0, 0]} maxBarSize={40} isAnimationActive={false} />
+                      <Bar dataKey="expense" name="expense" fill="#f43f5e" radius={[4, 4, 0, 0]} maxBarSize={40} isAnimationActive={false} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
               ) : (
-                <div className="w-full h-full flex flex-col items-center justify-center text-slate-400 text-sm bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                <div className="w-full h-full flex flex-col items-center justify-center text-slate-400 text-sm bg-slate-50 rounded-xl border border-dashed border-slate-200 print:hidden">
                   <TrendingUp className="w-8 h-8 mb-2 opacity-50" />
                   Tidak ada data transaksi pada periode ini.
                 </div>
               )}
+              
+              {/* Versi cetak data chart statis (Tabel perbandingan) karena SVG ResponsiveContainer sering error pemecahan halaman */}
+              <div className="hidden print:block w-full">
+                <table className="w-full text-sm border-collapse border border-slate-200">
+                  <thead>
+                    <tr className="bg-slate-50">
+                      <th className="border border-slate-200 px-4 py-2 text-left">Periode ({reportType === 'daily' ? 'Tanggal' : 'Bulan'})</th>
+                      <th className="border border-slate-200 px-4 py-2 text-right text-emerald-700">Pemasukan</th>
+                      <th className="border border-slate-200 px-4 py-2 text-right text-rose-700">Pengeluaran</th>
+                      <th className="border border-slate-200 px-4 py-2 text-right font-bold">Laba Bersih</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {data.chartData.length > 0 ? (
+                      data.chartData.map((item, idx) => (
+                        <tr key={idx}>
+                          <td className="border border-slate-200 px-4 py-2 font-medium">
+                            {reportType === 'daily' ? new Date(item.date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : item.date}
+                          </td>
+                          <td className="border border-slate-200 px-4 py-2 text-right text-emerald-600">{formatCurrency(item.income)}</td>
+                          <td className="border border-slate-200 px-4 py-2 text-right text-rose-600">{formatCurrency(item.expense)}</td>
+                          <td className={`border border-slate-200 px-4 py-2 text-right font-bold ${item.income - item.expense >= 0 ? 'text-emerald-700' : 'text-rose-700'}`}>
+                            {formatCurrency(item.income - item.expense)}
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={4} className="border border-slate-200 px-4 py-4 text-center text-slate-500">Tidak ada data.</td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
 
-          {/* Transaction List */}
-          <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-xl border border-white/20 overflow-hidden">
-            <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+            <div className="bg-white p-8 rounded-2xl shadow-xl border border-slate-200 print:shadow-none print:border-slate-200 overflow-hidden print:overflow-visible min-h-min h-auto print:block">
+            <div className="mb-6 print:mb-4 flex justify-between items-center print:bg-white text-left">
               <div>
                 <h3 className="font-bold text-slate-800 text-lg">Riwayat Transaksi</h3>
                 <p className="text-sm text-slate-500">Daftar lengkap pemasukan dan pengeluaran</p>
@@ -354,15 +404,15 @@ export default function LaporanPage() {
                 <Download className="w-4 h-4" /> Export CSV
               </button>
             </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm text-left">
-                <thead className="bg-slate-50/80 text-slate-500 font-semibold uppercase tracking-wider text-xs">
+            <div className="overflow-x-auto print:overflow-visible print:w-full">
+              <table className="w-full text-sm text-left print:text-xs">
+                <thead className="bg-slate-50/80 print:bg-slate-100 text-slate-500 print:text-slate-800 font-semibold uppercase tracking-wider text-xs">
                   <tr>
-                    <th className="px-6 py-4">Tanggal</th>
-                    <th className="px-6 py-4">Jenis</th>
-                    <th className="px-6 py-4">Keterangan</th>
-                    <th className="px-6 py-4">Kode Ref</th>
-                    <th className="px-6 py-4 text-right">Nominal</th>
+                    <th className="px-6 py-4 print:py-2">Tanggal</th>
+                    <th className="px-6 py-4 print:py-2">Jenis</th>
+                    <th className="px-6 py-4 print:py-2">Keterangan</th>
+                    <th className="px-6 py-4 print:py-2">Kode Ref</th>
+                    <th className="px-6 py-4 print:py-2 text-right">Nominal</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -373,26 +423,26 @@ export default function LaporanPage() {
                         initial={{ opacity: 0, x: -10 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: idx * 0.02 }}
-                        className="hover:bg-slate-50 transition-colors">
-                        <td className="px-6 py-4 text-slate-600 font-medium">
+                        className="hover:bg-slate-50 transition-colors print:table-row print-safe-motion">
+                        <td className="px-6 py-4 print:py-2 text-slate-600 font-medium">
                           {new Date(trx.date).toLocaleDateString('id-ID', {
                             day: 'numeric',
                             month: 'long',
                             year: 'numeric',
                           })}
                         </td>
-                        <td className="px-6 py-4">
+                        <td className="px-6 py-4 print:py-2">
                           <span
                             className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                              trx.type === 'pemasukan' ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'
+                              trx.type === 'pemasukan' ? 'bg-emerald-100 text-emerald-800 print:text-emerald-600' : 'bg-rose-100 text-rose-800 print:text-rose-600'
                             }`}>
                             {trx.type === 'pemasukan' ? 'Pemasukan' : 'Pengeluaran'}
                           </span>
                         </td>
-                        <td className="px-6 py-4 text-slate-700">{trx.description}</td>
-                        <td className="px-6 py-4 font-mono text-xs text-slate-500">{trx.refCode}</td>
+                        <td className="px-6 py-4 print:py-2 text-slate-700">{trx.description}</td>
+                        <td className="px-6 py-4 print:py-2 font-mono text-xs text-slate-500">{trx.refCode}</td>
                         <td
-                          className={`px-6 py-4 text-right font-bold ${
+                          className={`px-6 py-4 print:py-2 text-right font-bold ${
                             trx.type === 'pemasukan' ? 'text-emerald-600' : 'text-rose-600'
                           }`}>
                           {trx.type === 'pemasukan' ? '+' : '-'}

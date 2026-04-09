@@ -15,4 +15,5 @@ export const updatePesananSchema = z.object({
     ])
     .optional(),
   resi: z.string().min(1, 'Nomor resi tidak boleh kosong').optional(),
+  alasanPembatalan: z.string().optional(),
 });

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, Suspense } from 'react';
+import { createPortal } from 'react-dom';
 import { Plus, Edit, Trash2, X, Search, Image as ImageIcon, Eye, EyeOff, Filter } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
@@ -396,7 +397,16 @@ function BukuContent() {
                     <td className="px-6 py-5">
                       <div className="w-12 h-16 bg-slate-200 rounded-lg overflow-hidden shrink-0 relative shadow-sm group-hover:shadow-md transition-shadow">
                         {book.coverUrl ? (
-                          <Image src={book.coverUrl} alt={book.judul} fill className="object-cover" />
+                          <img 
+                            key={`table-${book.coverUrl}`}
+                            src={book.coverUrl} 
+                            alt={book.judul} 
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              e.currentTarget.onerror = null;
+                              e.currentTarget.src = "https://placehold.co/150x200/e2e8f0/64748b.png?text=Buku";
+                            }}
+                          />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center text-slate-400 bg-slate-100">
                             <ImageIcon className="w-5 h-5" />
@@ -465,14 +475,26 @@ function BukuContent() {
 
       <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
 
-      <AnimatePresence>
+      {typeof document !== 'undefined'
+        ? createPortal(
+            <AnimatePresence>
         {isModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[60] flex items-center justify-center"
+          >
+            <div
+              onClick={closeModal}
+              className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
+            />
             <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden">
+              initial={{ scale: 0.95, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.95, y: 20 }}
+              className="relative bg-white rounded-2xl shadow-2xl w-full m-4 sm:m-6 max-w-4xl overflow-hidden max-h-[90vh] flex flex-col z-10"
+            >
               <div className="flex items-center justify-between p-6 border-b border-slate-100 bg-slate-50/50 shrink-0">
                 <div>
                   <h3 className="text-xl font-bold text-slate-900">{editingBook ? 'Edit Buku' : 'Tambah Buku Baru'}</h3>
@@ -491,30 +513,66 @@ function BukuContent() {
                   <div className="md:col-span-4 space-y-4">
                     <label className="block text-sm font-semibold text-slate-700">Cover Buku</label>
                     <div className="aspect-[3/4] bg-slate-100 rounded-xl overflow-hidden relative border-2 border-dashed border-slate-300 hover:border-amber-500 transition-colors group cursor-pointer">
-                      {previewUrl ? (
-                        <Image src={previewUrl} alt="Preview" fill className="object-cover" />
+                      {previewUrl && previewUrl.length > 5 ? (
+                        <img 
+                          key={`preview-${previewUrl}`}
+                          src={previewUrl} 
+                          alt="Preview" 
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.currentTarget.onerror = null;
+                            e.currentTarget.src = "https://placehold.co/300x400/e2e8f0/64748b.png?text=Link+Tidak+Valid";
+                          }}
+                        />
                       ) : (
                         <div className="w-full h-full flex flex-col items-center justify-center text-slate-400 gap-2">
                           <ImageIcon className="w-8 h-8" />
                           <span className="text-xs font-medium">Upload Cover</span>
                         </div>
                       )}
+                      
+                      {/* Tanda apakah menggunakan file upload atau URL */}
+                      {previewUrl && (
+                        <div className="absolute top-2 right-2 px-2 py-1 text-[10px] uppercase font-bold rounded shadow-sm z-10 pointer-events-none transition-all">
+                          {coverFile ? (
+                            <span className="bg-emerald-500 text-white px-2 py-1 rounded">File Upload</span>
+                          ) : formData.coverUrl ? (
+                            <span className="bg-amber-500 text-white px-2 py-1 rounded">URL Online</span>
+                          ) : null}
+                        </div>
+                      )}
+                      
                       <input
                         type="file"
                         accept="image/*"
                         onChange={handleFileChange}
-                        className="absolute inset-0 opacity-0 cursor-pointer"
+                        className="absolute inset-0 opacity-0 cursor-pointer z-20"
+                        title="Klik untuk memilih atau mengganti gambar"
                       />
                     </div>
 
                     <div className="space-y-2">
-                      <p className="text-xs text-slate-500 text-center">Atau gunakan URL gambar</p>
+                      <div className="flex justify-between items-center">
+                        <p className="text-xs text-slate-500">Gunakan URL gambar online</p>
+                        {coverFile && (
+                           <button 
+                             type="button" 
+                             onClick={() => {
+                               setCoverFile(null);
+                               setPreviewUrl(formData.coverUrl || null);
+                             }}
+                             className="text-xs font-medium text-rose-500 hover:text-rose-600 transition-colors">
+                             Hapus File Upload
+                           </button>
+                        )}
+                      </div>
                       <input
                         type="text"
                         value={formData.coverUrl}
                         onChange={(e) => {
-                          setFormData({ ...formData, coverUrl: e.target.value });
-                          if (!coverFile) setPreviewUrl(e.target.value);
+                          const val = e.target.value;
+                          setFormData({ ...formData, coverUrl: val });
+                          if (!coverFile) setPreviewUrl(val || null);
                         }}
                         placeholder="https://..."
                         className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
@@ -670,9 +728,11 @@ function BukuContent() {
                 </div>
               </form>
             </motion.div>
-          </div>
+          </motion.div>
         )}
-      </AnimatePresence>
+      </AnimatePresence>,
+      document.body
+    ) : null}
     </div>
   );
 }

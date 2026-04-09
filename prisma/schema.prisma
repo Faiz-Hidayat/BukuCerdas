@@ -40,10 +40,10 @@ enum StatusPesanan {
 }
 
 enum MetodePembayaran {
-  cod
   transfer_bank
   ewallet
   qris
+  midtrans
 }
 
 enum TipeNotifikasi {
@@ -179,6 +179,7 @@ model Pesanan {
   pajakNominal           Decimal             @map("pajak_nominal") @db.Decimal(10, 2)
   totalBayar             Decimal             @map("total_bayar") @db.Decimal(10, 2)
   buktiPembayaranUrl     String?             @map("bukti_pembayaran_url") @db.VarChar(500)
+  alasanPembatalan       String?             @map("alasan_pembatalan") @db.Text
   resi                   String?             @db.VarChar(50)
   midtransOrderId        String?             @unique @map("midtrans_order_id") @db.VarChar(100)
   alamatSnapshot         String?             @map("alamat_snapshot") @db.Text

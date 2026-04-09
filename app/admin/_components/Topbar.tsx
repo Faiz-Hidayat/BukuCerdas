@@ -5,6 +5,7 @@ import { Bell, User, Search, Menu, X, CheckCircle, AlertCircle, Book, ShoppingBa
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useAdminLayout } from './AdminClientWrapper';
 
 interface Notifikasi {
   idNotifikasi: number;
@@ -18,6 +19,7 @@ interface Notifikasi {
 }
 
 export default function Topbar() {
+  const { toggleSidebar } = useAdminLayout();
   const [notifikasi, setNotifikasi] = useState<Notifikasi[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [showNotif, setShowNotif] = useState(false);
@@ -113,14 +115,19 @@ export default function Topbar() {
   return (
     <header
       data-topbar
-      className="h-20 bg-white/80 backdrop-blur-md border-b border-slate-200/60 fixed top-0 right-0 left-72 z-20 flex items-center justify-between px-8 transition-all duration-300 print:hidden">
+      className="h-20 bg-white/80 backdrop-blur-md border-b border-slate-200/60 fixed top-0 right-0 left-0 md:left-72 z-30 flex items-center justify-between px-4 md:px-8 transition-all duration-300 print:hidden">
       <div className="flex items-center gap-4">
-        <h1 className="text-xl font-bold text-slate-800 tracking-tight">
+        <button
+          onClick={toggleSidebar}
+          className="md:hidden p-2 text-slate-500 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors">
+          <Menu size={24} />
+        </button>
+        <h1 className="text-xl font-bold text-slate-800 tracking-tight hidden sm:block">
           Dashboard <span className="text-amber-600">Admin</span>
         </h1>
       </div>
 
-      <div className="flex items-center gap-6">
+      <div className="flex items-center gap-4 sm:gap-6">
         {/* Search Bar */}
         <div className="relative hidden md:block" ref={searchRef}>
           <div className="flex items-center bg-slate-100 rounded-full px-4 py-2.5 w-64 focus-within:ring-2 focus-within:ring-amber-500/20 transition-all focus-within:w-80">
@@ -311,8 +318,8 @@ export default function Topbar() {
               <p className="text-sm font-bold text-slate-800">Admin</p>
               <p className="text-xs text-slate-500 font-medium">Administrator</p>
             </div>
-            <div className="w-10 h-10 bg-gradient-to-br from-amber-100 to-amber-200 rounded-full flex items-center justify-center text-amber-700 shadow-sm border border-white ring-2 ring-slate-50">
-              <User className="w-5 h-5" />
+            <div className="w-9 h-9 sm:w-10 sm:h-10 bg-gradient-to-br from-amber-100 to-amber-200 rounded-full flex flex-shrink-0 items-center justify-center text-amber-700 shadow-sm border border-white ring-2 ring-slate-50">
+              <User className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
           </div>
         </div>

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, Suspense } from 'react';
+import { createPortal } from 'react-dom';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Search,
@@ -422,15 +423,27 @@ function UserContent() {
       </div>
 
       {/* Modal Form */}
-      <AnimatePresence>
+      {typeof document !== 'undefined'
+        ? createPortal(
+            <AnimatePresence>
         {isModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[60] flex items-center justify-center"
+          >
+            <div
+              onClick={closeModal}
+              className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
+            />
             <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden">
-              <div className="flex items-center justify-between p-6 border-b border-slate-100">
+              initial={{ scale: 0.95 }}
+              animate={{ scale: 1 }}
+              exit={{ scale: 0.95 }}
+              className="relative bg-white rounded-2xl shadow-xl w-full max-w-lg m-4 sm:m-6 overflow-hidden flex flex-col max-h-[90vh] z-10"
+            >
+              <div className="flex items-center justify-between p-6 border-b border-slate-100 shrink-0">
                 <h3 className="text-xl font-bold text-slate-800">{currentUser ? 'Edit User' : 'Tambah User Baru'}</h3>
                 <button
                   onClick={closeModal}
@@ -547,9 +560,11 @@ function UserContent() {
                 </div>
               </form>
             </motion.div>
-          </div>
+          </motion.div>
         )}
-      </AnimatePresence>
+      </AnimatePresence>,
+      document.body
+    ) : null}
     </div>
   );
 }

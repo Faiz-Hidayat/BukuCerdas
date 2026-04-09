@@ -85,13 +85,17 @@ function PesananContent() {
 
   const getStatusBadge = (status: string) => {
     const styles: Record<string, string> = {
+      menunggu_pembayaran: 'bg-amber-50 text-amber-700 border-amber-200',
+      menunggu_verifikasi: 'bg-indigo-50 text-indigo-700 border-indigo-200',
       diproses: 'bg-blue-50 text-blue-700 border-blue-200',
-      dikirim: 'bg-amber-50 text-amber-700 border-amber-200',
+      dikirim: 'bg-orange-50 text-orange-700 border-orange-200',
       selesai: 'bg-emerald-50 text-emerald-700 border-emerald-200',
       dibatalkan: 'bg-red-50 text-red-700 border-red-200',
     };
 
     const icons: Record<string, any> = {
+      menunggu_pembayaran: Clock,
+      menunggu_verifikasi: CheckCircle,
       diproses: Clock,
       dikirim: Truck,
       selesai: CheckCircle,
@@ -99,6 +103,7 @@ function PesananContent() {
     };
 
     const Icon = icons[status] || Package;
+    const label = status.replace(/_/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase());
 
     return (
       <span
@@ -106,7 +111,7 @@ function PesananContent() {
           styles[status] || 'bg-slate-100 text-slate-700 border-slate-200'
         }`}>
         <Icon className="w-3.5 h-3.5" />
-        {status.charAt(0).toUpperCase() + status.slice(1)}
+        {label}
       </span>
     );
   };
@@ -120,7 +125,7 @@ function PesananContent() {
             const res = await fetch(`/api/admin/pesanan/${id}`, {
               method: 'PUT',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ statusPesanan: 'diproses' }),
+              body: JSON.stringify({ statusPesanan: 'diproses', statusPembayaran: 'terkonfirmasi' }),
             });
             if (res.ok) {
               fetchOrders();
@@ -255,7 +260,7 @@ function PesananContent() {
                           title="Detail Pesanan">
                           <Eye className="w-4 h-4" />
                         </Link>
-                        {order.statusPesanan === 'diproses' && (
+                        {(order.statusPesanan === 'menunggu_verifikasi' || order.statusPesanan === 'menunggu_konfirmasi') && (
                           <button
                             onClick={() => handleProcessOrder(order.idPesanan)}
                             className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
@@ -302,3 +307,4 @@ export default function PesananPage() {
     </Suspense>
   );
 }
+

@@ -128,6 +128,8 @@ async function main() {
       isbn: '9789793062792',
       stok: 25,
       harga: 89000,
+      hargaBeli: 62300,
+      persentaseUntung: 30,
       sinopsis: 'Novel tentang kehidupan anak-anak di Belitung yang berjuang untuk mendapatkan pendidikan layak.',
       coverUrl: 'https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=400',
       statusAktif: true,
@@ -141,6 +143,8 @@ async function main() {
       isbn: '9789799101129',
       stok: 15,
       harga: 95000,
+      hargaBeli: 66500,
+      persentaseUntung: 30,
       sinopsis: 'Novel pertama dari Tetralogi Buru.',
       coverUrl: 'https://images.unsplash.com/photo-1512820790803-83ca734da794?w=400',
       statusAktif: true,
@@ -154,6 +158,8 @@ async function main() {
       isbn: '9786024246945',
       stok: 30,
       harga: 125000,
+      hargaBeli: 87500,
+      persentaseUntung: 30,
       sinopsis: 'Sejarah manusia dari zaman batu hingga era modern.',
       coverUrl: 'https://images.unsplash.com/photo-1532012197267-da84d127e765?w=400',
       statusAktif: true,
@@ -167,6 +173,8 @@ async function main() {
       isbn: '9786024812058',
       stok: 40,
       harga: 98000,
+      hargaBeli: 68600,
+      persentaseUntung: 30,
       sinopsis: 'Pengantar filsafat Stoic.',
       coverUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400',
       statusAktif: true,
@@ -180,6 +188,8 @@ async function main() {
       isbn: '9786020633176',
       stok: 50,
       harga: 109000,
+      hargaBeli: 76300,
+      persentaseUntung: 30,
       sinopsis: 'Panduan praktis membangun kebiasaan baik.',
       coverUrl: 'https://images.unsplash.com/photo-1495446815901-a7297e633e8d?w=400',
       statusAktif: true,
@@ -193,6 +203,8 @@ async function main() {
       isbn: '9786022914433',
       stok: 20,
       harga: 95000,
+      hargaBeli: 66500,
+      persentaseUntung: 30,
       sinopsis: 'Strategi untuk fokus tanpa gangguan.',
       coverUrl: 'https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?w=400',
       statusAktif: true,
@@ -206,6 +218,8 @@ async function main() {
       isbn: '9789799923196',
       stok: 12,
       harga: 850000,
+      hargaBeli: 595000,
+      persentaseUntung: 30,
       sinopsis: 'Tafsir Al-Quran lengkap.',
       coverUrl: 'https://images.unsplash.com/photo-1519682577862-22b62b24e493?w=400',
       statusAktif: true,
@@ -219,6 +233,8 @@ async function main() {
       isbn: '9789797567064',
       stok: 35,
       harga: 75000,
+      hargaBeli: 52500,
+      persentaseUntung: 30,
       sinopsis: 'Motivasi islami.',
       coverUrl: 'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=400',
       statusAktif: true,
@@ -232,6 +248,8 @@ async function main() {
       isbn: '9786024340377',
       stok: 45,
       harga: 35000,
+      hargaBeli: 24500,
+      persentaseUntung: 30,
       sinopsis: 'Cerita rakyat klasik.',
       coverUrl: 'https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?w=400',
       statusAktif: true,
@@ -245,6 +263,8 @@ async function main() {
       isbn: '9786024834524',
       stok: 28,
       harga: 125000,
+      hargaBeli: 87500,
+      persentaseUntung: 30,
       sinopsis: 'Ensiklopedia dinosaurus.',
       coverUrl: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=400',
       statusAktif: true,
@@ -258,6 +278,8 @@ async function main() {
       isbn: '9789793062853',
       stok: 22,
       harga: 88000,
+      hargaBeli: 61600,
+      persentaseUntung: 30,
       sinopsis: 'Novel romantis.',
       coverUrl: 'https://images.unsplash.com/photo-1589998059171-988d887df646?w=400',
       statusAktif: true,
@@ -271,6 +293,8 @@ async function main() {
       isbn: '9780132350884',
       stok: 18,
       harga: 185000,
+      hargaBeli: 129500,
+      persentaseUntung: 30,
       sinopsis: 'Panduan menulis kode yang bersih.',
       coverUrl: 'https://images.unsplash.com/photo-1515879218367-8466d910auj4?w=400',
       statusAktif: true,
@@ -387,7 +411,7 @@ async function main() {
     idUser: number;
     idAlamat: number;
     tanggalPesan: Date;
-    metodePembayaran: 'cod' | 'transfer_bank' | 'ewallet' | 'qris';
+    metodePembayaran: 'transfer_bank' | 'ewallet' | 'qris';
     statusPembayaran: 'terkonfirmasi' | 'belum_dibayar' | 'menunggu_konfirmasi' | 'dibatalkan';
     statusPesanan: 'selesai' | 'diproses' | 'dikirim' | 'dibatalkan' | 'menunggu_pembayaran' | 'menunggu_verifikasi';
     subtotal: number;
@@ -398,7 +422,7 @@ async function main() {
     alamatSnapshot: string;
     resi?: string;
     buktiPembayaranUrl?: string;
-    items: { idBuku: number; jumlah: number; hargaSatuan: number; subtotal: number }[];
+    items: { idBuku: number; jumlah: number; hargaBeliSatuan: number; hargaSatuan: number; subtotal: number }[];
   };
 
   const pesananList: PesananSeed[] = [
@@ -420,8 +444,8 @@ async function main() {
       resi: 'JNE001',
       buktiPembayaranUrl: '/uploads/bukti-pembayaran/bukti1.jpg',
       items: [
-        { idBuku: bukuList[0].idBuku, jumlah: 1, hargaSatuan: 89000, subtotal: 89000 },
-        { idBuku: bukuList[1].idBuku, jumlah: 1, hargaSatuan: 95000, subtotal: 95000 },
+        { idBuku: bukuList[0].idBuku, jumlah: 1, hargaBeliSatuan: Math.round(89000 * 0.7), hargaSatuan: 89000, subtotal: 89000 },
+        { idBuku: bukuList[1].idBuku, jumlah: 1, hargaBeliSatuan: Math.round(95000 * 0.7), hargaSatuan: 95000, subtotal: 95000 },
       ],
     },
     {
@@ -439,14 +463,14 @@ async function main() {
       totalBayar: 158750,
       alamatSnapshot: alamatSnap(alamat2),
       resi: 'JNT002',
-      items: [{ idBuku: bukuList[2].idBuku, jumlah: 1, hargaSatuan: 125000, subtotal: 125000 }],
+      items: [{ idBuku: bukuList[2].idBuku, jumlah: 1, hargaBeliSatuan: Math.round(125000 * 0.7), hargaSatuan: 125000, subtotal: 125000 }],
     },
     {
       kodePesanan: kode(3),
       idUser: user3.idUser,
       idAlamat: alamat3.idAlamat,
       tanggalPesan: daysAgo(3),
-      metodePembayaran: 'cod',
+      metodePembayaran: 'transfer_bank',
       statusPembayaran: 'terkonfirmasi',
       statusPesanan: 'selesai',
       subtotal: 198000,
@@ -456,7 +480,7 @@ async function main() {
       totalBayar: 244780,
       alamatSnapshot: alamatSnap(alamat3),
       resi: 'SICEPAT003',
-      items: [{ idBuku: bukuList[3].idBuku, jumlah: 2, hargaSatuan: 98000, subtotal: 196000 }],
+      items: [{ idBuku: bukuList[3].idBuku, jumlah: 2, hargaBeliSatuan: Math.round(98000 * 0.7), hargaSatuan: 98000, subtotal: 196000 }],
     },
     {
       kodePesanan: kode(4),
@@ -474,7 +498,7 @@ async function main() {
       alamatSnapshot: alamatSnap(alamat1),
       resi: 'JNE004',
       buktiPembayaranUrl: '/uploads/bukti-pembayaran/bukti4.jpg',
-      items: [{ idBuku: bukuList[4].idBuku, jumlah: 1, hargaSatuan: 109000, subtotal: 109000 }],
+      items: [{ idBuku: bukuList[4].idBuku, jumlah: 1, hargaBeliSatuan: Math.round(109000 * 0.7), hargaSatuan: 109000, subtotal: 109000 }],
     },
     {
       kodePesanan: kode(5),
@@ -491,7 +515,7 @@ async function main() {
       totalBayar: 125450,
       alamatSnapshot: alamatSnap(alamat2),
       resi: 'JNE005',
-      items: [{ idBuku: bukuList[5].idBuku, jumlah: 1, hargaSatuan: 95000, subtotal: 95000 }],
+      items: [{ idBuku: bukuList[5].idBuku, jumlah: 1, hargaBeliSatuan: Math.round(95000 * 0.7), hargaSatuan: 95000, subtotal: 95000 }],
     },
     {
       kodePesanan: kode(6),
@@ -509,14 +533,14 @@ async function main() {
       alamatSnapshot: alamatSnap(alamat3),
       resi: 'JNT006',
       buktiPembayaranUrl: '/uploads/bukti-pembayaran/bukti6.jpg',
-      items: [{ idBuku: bukuList[7].idBuku, jumlah: 1, hargaSatuan: 75000, subtotal: 75000 }],
+      items: [{ idBuku: bukuList[7].idBuku, jumlah: 1, hargaBeliSatuan: Math.round(75000 * 0.7), hargaSatuan: 75000, subtotal: 75000 }],
     },
     {
       kodePesanan: kode(7),
       idUser: user1.idUser,
       idAlamat: alamat1.idAlamat,
       tanggalPesan: daysAgo(10),
-      metodePembayaran: 'cod',
+      metodePembayaran: 'transfer_bank',
       statusPembayaran: 'terkonfirmasi',
       statusPesanan: 'selesai',
       subtotal: 213000,
@@ -527,8 +551,8 @@ async function main() {
       alamatSnapshot: alamatSnap(alamat1),
       resi: 'JNE007',
       items: [
-        { idBuku: bukuList[10].idBuku, jumlah: 1, hargaSatuan: 88000, subtotal: 88000 },
-        { idBuku: bukuList[2].idBuku, jumlah: 1, hargaSatuan: 125000, subtotal: 125000 },
+        { idBuku: bukuList[10].idBuku, jumlah: 1, hargaBeliSatuan: Math.round(88000 * 0.7), hargaSatuan: 88000, subtotal: 88000 },
+        { idBuku: bukuList[2].idBuku, jumlah: 1, hargaBeliSatuan: Math.round(125000 * 0.7), hargaSatuan: 125000, subtotal: 125000 },
       ],
     },
     {
@@ -546,7 +570,7 @@ async function main() {
       totalBayar: 225350,
       alamatSnapshot: alamatSnap(alamat2),
       resi: 'SICEPAT008',
-      items: [{ idBuku: bukuList[11].idBuku, jumlah: 1, hargaSatuan: 185000, subtotal: 185000 }],
+      items: [{ idBuku: bukuList[11].idBuku, jumlah: 1, hargaBeliSatuan: Math.round(185000 * 0.7), hargaSatuan: 185000, subtotal: 185000 }],
     },
     {
       kodePesanan: kode(9),
@@ -564,7 +588,7 @@ async function main() {
       alamatSnapshot: alamatSnap(alamat3),
       resi: 'JNE009',
       buktiPembayaranUrl: '/uploads/bukti-pembayaran/bukti9.jpg',
-      items: [{ idBuku: bukuList[8].idBuku, jumlah: 1, hargaSatuan: 35000, subtotal: 35000 }],
+      items: [{ idBuku: bukuList[8].idBuku, jumlah: 1, hargaBeliSatuan: Math.round(35000 * 0.7), hargaSatuan: 35000, subtotal: 35000 }],
     },
     {
       kodePesanan: kode(10),
@@ -581,14 +605,14 @@ async function main() {
       totalBayar: 958500,
       alamatSnapshot: alamatSnap(alamat1),
       resi: 'JNT010',
-      items: [{ idBuku: bukuList[6].idBuku, jumlah: 1, hargaSatuan: 850000, subtotal: 850000 }],
+      items: [{ idBuku: bukuList[6].idBuku, jumlah: 1, hargaBeliSatuan: Math.round(850000 * 0.7), hargaSatuan: 850000, subtotal: 850000 }],
     },
     {
       kodePesanan: kode(11),
       idUser: user2.idUser,
       idAlamat: alamat2.idAlamat,
       tanggalPesan: daysAgo(18),
-      metodePembayaran: 'cod',
+      metodePembayaran: 'transfer_bank',
       statusPembayaran: 'terkonfirmasi',
       statusPesanan: 'selesai',
       subtotal: 178000,
@@ -598,7 +622,7 @@ async function main() {
       totalBayar: 217580,
       alamatSnapshot: alamatSnap(alamat2),
       resi: 'JNE011',
-      items: [{ idBuku: bukuList[0].idBuku, jumlah: 2, hargaSatuan: 89000, subtotal: 178000 }],
+      items: [{ idBuku: bukuList[0].idBuku, jumlah: 2, hargaBeliSatuan: Math.round(89000 * 0.7), hargaSatuan: 89000, subtotal: 178000 }],
     },
     {
       kodePesanan: kode(12),
@@ -616,7 +640,7 @@ async function main() {
       alamatSnapshot: alamatSnap(alamat3),
       resi: 'JNE012',
       buktiPembayaranUrl: '/uploads/bukti-pembayaran/bukti12.jpg',
-      items: [{ idBuku: bukuList[9].idBuku, jumlah: 2, hargaSatuan: 125000, subtotal: 250000 }],
+      items: [{ idBuku: bukuList[9].idBuku, jumlah: 2, hargaBeliSatuan: Math.round(125000 * 0.7), hargaSatuan: 125000, subtotal: 250000 }],
     },
     {
       kodePesanan: kode(13),
@@ -633,14 +657,14 @@ async function main() {
       totalBayar: 120450,
       alamatSnapshot: alamatSnap(alamat1),
       resi: 'SICEPAT013',
-      items: [{ idBuku: bukuList[1].idBuku, jumlah: 1, hargaSatuan: 95000, subtotal: 95000 }],
+      items: [{ idBuku: bukuList[1].idBuku, jumlah: 1, hargaBeliSatuan: Math.round(95000 * 0.7), hargaSatuan: 95000, subtotal: 95000 }],
     },
     {
       kodePesanan: kode(14),
       idUser: user2.idUser,
       idAlamat: alamat2.idAlamat,
       tanggalPesan: daysAgo(25),
-      metodePembayaran: 'cod',
+      metodePembayaran: 'transfer_bank',
       statusPembayaran: 'terkonfirmasi',
       statusPesanan: 'selesai',
       subtotal: 109000,
@@ -650,7 +674,7 @@ async function main() {
       totalBayar: 140990,
       alamatSnapshot: alamatSnap(alamat2),
       resi: 'JNE014',
-      items: [{ idBuku: bukuList[4].idBuku, jumlah: 1, hargaSatuan: 109000, subtotal: 109000 }],
+      items: [{ idBuku: bukuList[4].idBuku, jumlah: 1, hargaBeliSatuan: Math.round(109000 * 0.7), hargaSatuan: 109000, subtotal: 109000 }],
     },
     {
       kodePesanan: kode(15),
@@ -668,7 +692,7 @@ async function main() {
       alamatSnapshot: alamatSnap(alamat3),
       resi: 'JNT015',
       buktiPembayaranUrl: '/uploads/bukti-pembayaran/bukti15.jpg',
-      items: [{ idBuku: bukuList[11].idBuku, jumlah: 2, hargaSatuan: 185000, subtotal: 370000 }],
+      items: [{ idBuku: bukuList[11].idBuku, jumlah: 2, hargaBeliSatuan: Math.round(185000 * 0.7), hargaSatuan: 185000, subtotal: 370000 }],
     },
     {
       kodePesanan: kode(16),
@@ -685,14 +709,14 @@ async function main() {
       totalBayar: 113790,
       alamatSnapshot: alamatSnap(alamat1),
       resi: 'JNE016',
-      items: [{ idBuku: bukuList[0].idBuku, jumlah: 1, hargaSatuan: 89000, subtotal: 89000 }],
+      items: [{ idBuku: bukuList[0].idBuku, jumlah: 1, hargaBeliSatuan: Math.round(89000 * 0.7), hargaSatuan: 89000, subtotal: 89000 }],
     },
     {
       kodePesanan: kode(17),
       idUser: user2.idUser,
       idAlamat: alamat2.idAlamat,
       tanggalPesan: daysAgo(38),
-      metodePembayaran: 'cod',
+      metodePembayaran: 'transfer_bank',
       statusPembayaran: 'terkonfirmasi',
       statusPesanan: 'selesai',
       subtotal: 160000,
@@ -703,8 +727,8 @@ async function main() {
       alamatSnapshot: alamatSnap(alamat2),
       resi: 'JNT017',
       items: [
-        { idBuku: bukuList[8].idBuku, jumlah: 2, hargaSatuan: 35000, subtotal: 70000 },
-        { idBuku: bukuList[10].idBuku, jumlah: 1, hargaSatuan: 88000, subtotal: 88000 },
+        { idBuku: bukuList[8].idBuku, jumlah: 2, hargaBeliSatuan: Math.round(35000 * 0.7), hargaSatuan: 35000, subtotal: 70000 },
+        { idBuku: bukuList[10].idBuku, jumlah: 1, hargaBeliSatuan: Math.round(88000 * 0.7), hargaSatuan: 88000, subtotal: 88000 },
       ],
     },
     {
@@ -723,7 +747,7 @@ async function main() {
       alamatSnapshot: alamatSnap(alamat3),
       resi: 'JNE018',
       buktiPembayaranUrl: '/uploads/bukti-pembayaran/bukti18.jpg',
-      items: [{ idBuku: bukuList[3].idBuku, jumlah: 1, hargaSatuan: 98000, subtotal: 98000 }],
+      items: [{ idBuku: bukuList[3].idBuku, jumlah: 1, hargaBeliSatuan: Math.round(98000 * 0.7), hargaSatuan: 98000, subtotal: 98000 }],
     },
     {
       kodePesanan: kode(19),
@@ -740,14 +764,14 @@ async function main() {
       totalBayar: 153750,
       alamatSnapshot: alamatSnap(alamat1),
       resi: 'SICEPAT019',
-      items: [{ idBuku: bukuList[9].idBuku, jumlah: 1, hargaSatuan: 125000, subtotal: 125000 }],
+      items: [{ idBuku: bukuList[9].idBuku, jumlah: 1, hargaBeliSatuan: Math.round(125000 * 0.7), hargaSatuan: 125000, subtotal: 125000 }],
     },
     {
       kodePesanan: kode(20),
       idUser: user2.idUser,
       idAlamat: alamat2.idAlamat,
       tanggalPesan: daysAgo(58),
-      metodePembayaran: 'cod',
+      metodePembayaran: 'transfer_bank',
       statusPembayaran: 'terkonfirmasi',
       statusPesanan: 'selesai',
       subtotal: 75000,
@@ -757,7 +781,7 @@ async function main() {
       totalBayar: 103250,
       alamatSnapshot: alamatSnap(alamat2),
       resi: 'JNE020',
-      items: [{ idBuku: bukuList[7].idBuku, jumlah: 1, hargaSatuan: 75000, subtotal: 75000 }],
+      items: [{ idBuku: bukuList[7].idBuku, jumlah: 1, hargaBeliSatuan: Math.round(75000 * 0.7), hargaSatuan: 75000, subtotal: 75000 }],
     },
 
     // === DIPROSES (3 pesanan — baru dikonfirmasi, sedang dikemas) ===
@@ -776,14 +800,14 @@ async function main() {
       totalBayar: 120450,
       alamatSnapshot: alamatSnap(alamat1),
       buktiPembayaranUrl: '/uploads/bukti-pembayaran/bukti21.jpg',
-      items: [{ idBuku: bukuList[5].idBuku, jumlah: 1, hargaSatuan: 95000, subtotal: 95000 }],
+      items: [{ idBuku: bukuList[5].idBuku, jumlah: 1, hargaBeliSatuan: Math.round(95000 * 0.7), hargaSatuan: 95000, subtotal: 95000 }],
     },
     {
       kodePesanan: kode(22),
       idUser: user3.idUser,
       idAlamat: alamat3.idAlamat,
       tanggalPesan: daysAgo(0),
-      metodePembayaran: 'cod',
+      metodePembayaran: 'transfer_bank',
       statusPembayaran: 'terkonfirmasi',
       statusPesanan: 'diproses',
       subtotal: 89000,
@@ -792,7 +816,7 @@ async function main() {
       pajakNominal: 9790,
       totalBayar: 123790,
       alamatSnapshot: alamatSnap(alamat3),
-      items: [{ idBuku: bukuList[0].idBuku, jumlah: 1, hargaSatuan: 89000, subtotal: 89000 }],
+      items: [{ idBuku: bukuList[0].idBuku, jumlah: 1, hargaBeliSatuan: Math.round(89000 * 0.7), hargaSatuan: 89000, subtotal: 89000 }],
     },
     {
       kodePesanan: kode(23),
@@ -808,7 +832,7 @@ async function main() {
       pajakNominal: 20350,
       totalBayar: 225350,
       alamatSnapshot: alamatSnap(alamat2),
-      items: [{ idBuku: bukuList[11].idBuku, jumlah: 1, hargaSatuan: 185000, subtotal: 185000 }],
+      items: [{ idBuku: bukuList[11].idBuku, jumlah: 1, hargaBeliSatuan: Math.round(185000 * 0.7), hargaSatuan: 185000, subtotal: 185000 }],
     },
 
     // === DIKIRIM (2 pesanan — sedang dalam pengiriman) ===
@@ -828,14 +852,14 @@ async function main() {
       alamatSnapshot: alamatSnap(alamat1),
       resi: 'JNE024',
       buktiPembayaranUrl: '/uploads/bukti-pembayaran/bukti24.jpg',
-      items: [{ idBuku: bukuList[4].idBuku, jumlah: 2, hargaSatuan: 109000, subtotal: 218000 }],
+      items: [{ idBuku: bukuList[4].idBuku, jumlah: 2, hargaBeliSatuan: Math.round(109000 * 0.7), hargaSatuan: 109000, subtotal: 218000 }],
     },
     {
       kodePesanan: kode(25),
       idUser: user3.idUser,
       idAlamat: alamat3.idAlamat,
       tanggalPesan: daysAgo(4),
-      metodePembayaran: 'cod',
+      metodePembayaran: 'transfer_bank',
       statusPembayaran: 'terkonfirmasi',
       statusPesanan: 'dikirim',
       subtotal: 125000,
@@ -845,7 +869,7 @@ async function main() {
       totalBayar: 163750,
       alamatSnapshot: alamatSnap(alamat3),
       resi: 'JNT025',
-      items: [{ idBuku: bukuList[2].idBuku, jumlah: 1, hargaSatuan: 125000, subtotal: 125000 }],
+      items: [{ idBuku: bukuList[2].idBuku, jumlah: 1, hargaBeliSatuan: Math.round(125000 * 0.7), hargaSatuan: 125000, subtotal: 125000 }],
     },
 
     // === MENUNGGU PEMBAYARAN (2 pesanan — user belum bayar transfer) ===
@@ -863,7 +887,7 @@ async function main() {
       pajakNominal: 10450,
       totalBayar: 125450,
       alamatSnapshot: alamatSnap(alamat2),
-      items: [{ idBuku: bukuList[1].idBuku, jumlah: 1, hargaSatuan: 95000, subtotal: 95000 }],
+      items: [{ idBuku: bukuList[1].idBuku, jumlah: 1, hargaBeliSatuan: Math.round(95000 * 0.7), hargaSatuan: 95000, subtotal: 95000 }],
     },
     {
       kodePesanan: kode(27),
@@ -879,7 +903,7 @@ async function main() {
       pajakNominal: 9790,
       totalBayar: 113790,
       alamatSnapshot: alamatSnap(alamat1),
-      items: [{ idBuku: bukuList[0].idBuku, jumlah: 1, hargaSatuan: 89000, subtotal: 89000 }],
+      items: [{ idBuku: bukuList[0].idBuku, jumlah: 1, hargaBeliSatuan: Math.round(89000 * 0.7), hargaSatuan: 89000, subtotal: 89000 }],
     },
 
     // === MENUNGGU VERIFIKASI (2 pesanan — bukti sudah upload, admin belum cek) ===
@@ -898,7 +922,7 @@ async function main() {
       totalBayar: 230350,
       alamatSnapshot: alamatSnap(alamat3),
       buktiPembayaranUrl: '/uploads/bukti-pembayaran/bukti28.jpg',
-      items: [{ idBuku: bukuList[11].idBuku, jumlah: 1, hargaSatuan: 185000, subtotal: 185000 }],
+      items: [{ idBuku: bukuList[11].idBuku, jumlah: 1, hargaBeliSatuan: Math.round(185000 * 0.7), hargaSatuan: 185000, subtotal: 185000 }],
     },
     {
       kodePesanan: kode(29),
@@ -915,7 +939,7 @@ async function main() {
       totalBayar: 140990,
       alamatSnapshot: alamatSnap(alamat2),
       buktiPembayaranUrl: '/uploads/bukti-pembayaran/bukti29.jpg',
-      items: [{ idBuku: bukuList[4].idBuku, jumlah: 1, hargaSatuan: 109000, subtotal: 109000 }],
+      items: [{ idBuku: bukuList[4].idBuku, jumlah: 1, hargaBeliSatuan: Math.round(109000 * 0.7), hargaSatuan: 109000, subtotal: 109000 }],
     },
 
     // === DIBATALKAN (2 pesanan) ===
@@ -933,7 +957,7 @@ async function main() {
       pajakNominal: 8250,
       totalBayar: 98250,
       alamatSnapshot: alamatSnap(alamat1),
-      items: [{ idBuku: bukuList[7].idBuku, jumlah: 1, hargaSatuan: 75000, subtotal: 75000 }],
+      items: [{ idBuku: bukuList[7].idBuku, jumlah: 1, hargaBeliSatuan: Math.round(75000 * 0.7), hargaSatuan: 75000, subtotal: 75000 }],
     },
     {
       kodePesanan: kode(31),
@@ -949,7 +973,7 @@ async function main() {
       pajakNominal: 3850,
       totalBayar: 58850,
       alamatSnapshot: alamatSnap(alamat2),
-      items: [{ idBuku: bukuList[8].idBuku, jumlah: 1, hargaSatuan: 35000, subtotal: 35000 }],
+      items: [{ idBuku: bukuList[8].idBuku, jumlah: 1, hargaBeliSatuan: Math.round(35000 * 0.7), hargaSatuan: 35000, subtotal: 35000 }],
     },
   ];
 
@@ -989,37 +1013,49 @@ async function main() {
       nominal: 2500000,
       keterangan: 'Restock 50 buku dari distributor',
       tanggal: daysAgo(2),
+      kategori: 'operasional' as any
     },
     {
       judul: 'Biaya kurir bulanan',
       nominal: 350000,
       keterangan: 'Langganan pick-up JNE bulan ini',
       tanggal: daysAgo(5),
+      kategori: 'operasional' as any
     },
-    { judul: 'Biaya packaging', nominal: 150000, keterangan: 'Kardus dan bubble wrap', tanggal: daysAgo(8) },
-    { judul: 'Gaji karyawan gudang', nominal: 3000000, keterangan: 'Gaji bulan ini', tanggal: daysAgo(10) },
-    { judul: 'Maintenance website', nominal: 200000, keterangan: 'Biaya hosting dan domain', tanggal: daysAgo(15) },
+    { judul: 'Biaya packaging', nominal: 150000, keterangan: 'Kardus dan bubble wrap', tanggal: daysAgo(8),
+      kategori: 'operasional' as any },
+    { judul: 'Gaji karyawan gudang', nominal: 3000000, keterangan: 'Gaji bulan ini', tanggal: daysAgo(10),
+      kategori: 'operasional' as any },
+    { judul: 'Maintenance website', nominal: 200000, keterangan: 'Biaya hosting dan domain', tanggal: daysAgo(15),
+      kategori: 'operasional' as any },
     {
       judul: 'Iklan media sosial',
       nominal: 500000,
       keterangan: 'Promo Instagram & Facebook Ads',
       tanggal: daysAgo(20),
+      kategori: 'operasional' as any
     },
-    { judul: 'Pembelian stok buku', nominal: 1800000, keterangan: 'Restock 30 buku populer', tanggal: daysAgo(25) },
-    { judul: 'Biaya listrik & internet', nominal: 450000, keterangan: 'Tagihan bulanan gudang', tanggal: daysAgo(30) },
-    { judul: 'ATK & kebutuhan kantor', nominal: 175000, keterangan: 'Printer, tinta, kertas', tanggal: daysAgo(35) },
+    { judul: 'Pembelian stok buku', nominal: 1800000, keterangan: 'Restock 30 buku populer', tanggal: daysAgo(25),
+      kategori: 'operasional' as any },
+    { judul: 'Biaya listrik & internet', nominal: 450000, keterangan: 'Tagihan bulanan gudang', tanggal: daysAgo(30),
+      kategori: 'operasional' as any },
+    { judul: 'ATK & kebutuhan kantor', nominal: 175000, keterangan: 'Printer, tinta, kertas', tanggal: daysAgo(35),
+      kategori: 'operasional' as any },
     {
       judul: 'Biaya kurir bulanan',
       nominal: 350000,
       keterangan: 'Langganan pick-up JNE bulan lalu',
       tanggal: daysAgo(40),
+      kategori: 'operasional' as any
     },
-    { judul: 'Pembelian stok buku', nominal: 2000000, keterangan: 'Restock buku pendidikan', tanggal: daysAgo(50) },
+    { judul: 'Pembelian stok buku', nominal: 2000000, keterangan: 'Restock buku pendidikan', tanggal: daysAgo(50),
+      kategori: 'operasional' as any },
     {
       judul: 'Biaya event pameran buku',
       nominal: 750000,
       keterangan: 'Booth di pameran buku Jakarta',
       tanggal: daysAgo(55),
+      kategori: 'operasional' as any
     },
   ];
 

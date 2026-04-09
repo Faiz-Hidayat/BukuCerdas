@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Navbar from '../(marketing)/_components/Navbar';
 import Footer from '../(marketing)/_components/Footer';
-import { Trash2, Plus, Minus, ShoppingBag, ArrowRight } from 'lucide-react';
+import { Trash2, Plus, Minus, ShoppingBag, ArrowRight, AlertCircle, RefreshCcw } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 
@@ -24,14 +24,19 @@ interface CartItem {
 export default function KeranjangPage() {
   const router = useRouter();
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const [selectedItems, setSelectedItems] = useState<number[]>([]);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState<number | null>(null);
+
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchCart();
   }, []);
 
   const fetchCart = async () => {
+    setLoading(true);
+    setError(null);
     try {
       const res = await fetch('/api/keranjang');
       if (res.ok) {
@@ -39,9 +44,12 @@ export default function KeranjangPage() {
         setCartItems(data.itemKeranjang || []);
       } else if (res.status === 401) {
         window.location.href = '/login';
+      } else {
+        throw new Error('Gagal memuat keranjang');
       }
     } catch (error) {
       console.error('Error fetching cart', error);
+      setError('Terjadi kesalahan saat memuat data keranjang.');
     } finally {
       setLoading(false);
     }
@@ -81,18 +89,56 @@ export default function KeranjangPage() {
     }
   };
 
-  const subtotal = cartItems.reduce((acc, item) => acc + Number(item.buku.harga) * item.jumlah, 0);
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedItems(cartItems.map((item) => item.idItem));
+    } else {
+      setSelectedItems([]);
+    }
+  };
+
+  const handleSelectItem = (idItem: number, checked: boolean) => {
+    if (checked) {
+      setSelectedItems((prev) => [...prev, idItem]);
+    } else {
+      setSelectedItems((prev) => prev.filter((id) => id !== idItem));
+    }
+  };
+
+  const selectedCartItems = cartItems.filter((item) => selectedItems.includes(item.idItem));
+  const subtotal = selectedCartItems.reduce((acc, item) => acc + Number(item.buku.harga) * item.jumlah, 0);
+
+  const handleCheckout = () => {
+    if (selectedItems.length === 0) {
+      toast.error('Pilih setidaknya satu buku untuk dicheckout');
+      return;
+    }
+    router.push(`/checkout?items=${selectedItems.join(',')}`);
+  };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#FDFBF7]">
+      <div className="min-h-screen bg-[#FDFBF7] flex flex-col">
         <Navbar />
-        <div className="pt-24 pb-12 px-6 lg:px-8 max-w-7xl mx-auto">
-          <div className="animate-pulse space-y-4">
-            <div className="h-8 bg-slate-200 rounded w-1/4" />
-            <div className="h-64 bg-slate-200 rounded w-full" />
+        <div className="flex-1 pt-24 pb-12 px-6 lg:px-8 max-w-4xl mx-auto w-full">
+          <div className="h-8 bg-slate-200 rounded w-1/4 mb-8 animate-pulse" />
+          <div className="flex flex-col gap-4">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 flex gap-4 animate-pulse">
+                <div className="w-20 h-28 bg-slate-200 rounded-lg flex-shrink-0" />
+                <div className="flex-1 flex flex-col justify-between">
+                  <div className="h-5 bg-slate-200 rounded w-3/4 mb-2" />
+                  <div className="h-4 bg-slate-200 rounded w-1/4" />
+                  <div className="mt-4 flex justify-between items-center">
+                    <div className="h-8 bg-slate-200 rounded w-24" />
+                    <div className="h-8 w-8 bg-slate-200 rounded-md" />
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
+        <Footer />
       </div>
     );
   }
@@ -104,11 +150,35 @@ export default function KeranjangPage() {
       <div className="pt-24 pb-12 px-6 lg:px-8 max-w-7xl mx-auto">
         <h1 className="text-3xl font-bold text-slate-900 mb-8">Keranjang Belanja</h1>
 
-        {cartItems.length > 0 ? (
+        {error ? (
+          <div className="bg-white rounded-2xl border border-slate-100 p-12 text-center shadow-sm">
+            <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-red-100">
+              <AlertCircle className="w-8 h-8 text-red-500" />
+            </div>
+            <h3 className="text-xl font-bold text-slate-900 mb-2">Gagal Memuat Keranjang</h3>
+            <p className="text-slate-500 mb-6 max-w-md mx-auto">{error}</p>
+            <button
+              onClick={() => { setError(null); fetchCart(); }}
+              className="inline-flex items-center gap-2 bg-amber-500 text-white px-6 py-2.5 rounded-xl font-medium hover:bg-amber-600 transition-colors"
+            >
+              <RefreshCcw className="w-4 h-4" />
+              Coba Lagi
+            </button>
+          </div>
+        ) : cartItems.length > 0 ? (
           <div className="flex flex-col lg:flex-row gap-8">
             {/* Cart Items List */}
             <div className="flex-1">
               <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                <div className="p-4 border-b border-slate-100 flex items-center gap-3">
+                  <input
+                    type="checkbox"
+                    checked={cartItems.length > 0 && selectedItems.length === cartItems.length}
+                    onChange={(e) => handleSelectAll(e.target.checked)}
+                    className="w-5 h-5 rounded border-slate-300 text-amber-500 focus:ring-amber-500"
+                  />
+                  <span className="font-medium text-slate-700">Pilih Semua ({cartItems.length})</span>
+                </div>
                 <div className="p-6 space-y-6">
                   {cartItems.map((item) => (
                     <motion.div
@@ -117,7 +187,17 @@ export default function KeranjangPage() {
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       exit={{ opacity: 0 }}
-                      className="flex gap-4 py-4 border-b border-slate-100 last:border-0">
+                      className="flex items-center gap-4 py-4 border-b border-slate-100 last:border-0">
+                      
+                      <div className="flex items-center justify-center shrink-0 w-6">
+                        <input
+                          type="checkbox"
+                          checked={selectedItems.includes(item.idItem)}
+                          onChange={(e) => handleSelectItem(item.idItem, e.target.checked)}
+                          className="w-5 h-5 rounded border-slate-300 text-amber-500 focus:ring-amber-500"
+                        />
+                      </div>
+
                       <div className="w-20 h-28 bg-slate-100 rounded-lg overflow-hidden flex-shrink-0">
                         {item.buku.coverUrl ? (
                           <img src={item.buku.coverUrl} alt={item.buku.judul} className="w-full h-full object-cover" />
@@ -183,8 +263,8 @@ export default function KeranjangPage() {
 
                 <div className="space-y-3 mb-6">
                   <div className="flex justify-between text-slate-600">
-                    <span>Total Item</span>
-                    <span>{cartItems.reduce((acc, item) => acc + item.jumlah, 0)} barang</span>
+                    <span>Total Item Dipilih</span>
+                    <span>{cartItems.filter(item => selectedItems.includes(item.idItem)).reduce((acc, item) => acc + item.jumlah, 0)} barang</span>
                   </div>
                   <div className="flex justify-between text-slate-900 font-bold text-lg pt-3 border-t border-slate-100">
                     <span>Total Harga</span>
@@ -193,12 +273,13 @@ export default function KeranjangPage() {
                   <p className="text-xs text-slate-500 mt-2">*Ongkir dan pajak akan dihitung saat checkout</p>
                 </div>
 
-                <Link
-                  href="/checkout"
-                  className="w-full flex items-center justify-center gap-2 bg-slate-900 text-white py-3 rounded-xl font-medium hover:bg-slate-800 transition-all hover:shadow-lg hover:-translate-y-0.5">
+                <button
+                  onClick={handleCheckout}
+                  disabled={selectedItems.length === 0}
+                  className="w-full flex items-center justify-center gap-2 bg-slate-900 text-white py-3 rounded-xl font-medium hover:bg-slate-800 transition-all hover:shadow-lg hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed">
                   Lanjut ke Checkout
                   <ArrowRight className="w-4 h-4" />
-                </Link>
+                </button>
               </div>
             </div>
           </div>

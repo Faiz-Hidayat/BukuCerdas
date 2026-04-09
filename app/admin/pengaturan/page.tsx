@@ -214,11 +214,6 @@ export default function PengaturanPage() {
                 {/* Payment Method Toggles */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
                   <ToggleSwitch
-                    label="Cash On Delivery (COD)"
-                    checked={formData.aktifCOD}
-                    onChange={(val) => setFormData({ ...formData, aktifCOD: val })}
-                  />
-                  <ToggleSwitch
                     label="Transfer Bank"
                     checked={formData.aktifTransfer}
                     onChange={(val) => setFormData({ ...formData, aktifTransfer: val })}

@@ -3,7 +3,7 @@
 import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Search, Filter, ShoppingCart, Star } from 'lucide-react';
+import { Search, Filter, ShoppingCart, Star, AlertCircle, RefreshCcw } from 'lucide-react';
 import Navbar from '../(marketing)/_components/Navbar';
 import Footer from '../(marketing)/_components/Footer';
 import Pagination from '../_components/Pagination';
@@ -41,6 +41,7 @@ function KatalogContent() {
   const [sortBy, setSortBy] = useState(searchParams.get('sort') || 'terbaru');
   const [currentPage, setCurrentPage] = useState(Number(searchParams.get('page') || '1'));
   const [totalPages, setTotalPages] = useState(1);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchCategories();
@@ -72,6 +73,7 @@ function KatalogContent() {
 
   const fetchBooks = async () => {
     setLoading(true);
+    setError(null);
     try {
       const params = new URLSearchParams();
       if (search) params.append('search', search);
@@ -85,9 +87,12 @@ function KatalogContent() {
         const json = await res.json();
         setBooks(json.data);
         setTotalPages(json.pagination.totalPages);
+      } else {
+        throw new Error('Gagal memuat buku');
       }
     } catch (error) {
       console.error('Error fetching books', error);
+      setError('Terjadi kesalahan saat mengambil data buku dari server.');
     } finally {
       setLoading(false);
     }
@@ -172,10 +177,36 @@ function KatalogContent() {
         </div>
 
         {/* Book Grid */}
-        {loading ? (
+        {error ? (
+          <div className="bg-white rounded-2xl border border-slate-100 p-12 text-center shadow-sm">
+            <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-red-100">
+              <AlertCircle className="w-8 h-8 text-red-500" />
+            </div>
+            <h3 className="text-xl font-bold text-slate-900 mb-2">Gagal Memuat Data</h3>
+            <p className="text-slate-500 mb-6 max-w-md mx-auto">{error}</p>
+            <button
+              onClick={() => { setError(null); fetchBooks(); }}
+              className="inline-flex items-center gap-2 bg-amber-500 text-white px-6 py-2.5 rounded-xl font-medium hover:bg-amber-600 transition-colors"
+            >
+              <RefreshCcw className="w-4 h-4" />
+              Coba Lagi
+            </button>
+          </div>
+        ) : loading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {[...Array(8)].map((_, i) => (
-              <div key={i} className="bg-white rounded-xl p-4 h-80 animate-pulse" />
+              <div key={i} className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden flex flex-col h-[400px] animate-pulse">
+                <div className="h-[240px] bg-slate-200" />
+                <div className="p-4 flex flex-col flex-1 gap-2.5">
+                  <div className="h-3 bg-slate-200 rounded w-1/3" />
+                  <div className="h-5 bg-slate-200 rounded w-3/4" />
+                  <div className="h-3 bg-slate-200 rounded w-1/2" />
+                  <div className="mt-auto flex justify-between items-center pt-2">
+                    <div className="h-5 bg-slate-200 rounded w-1/3" />
+                    <div className="h-8 w-8 bg-slate-200 rounded-lg" />
+                  </div>
+                </div>
+              </div>
             ))}
           </div>
         ) : books.length > 0 ? (

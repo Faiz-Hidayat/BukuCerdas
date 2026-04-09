@@ -157,8 +157,8 @@ const BookShowcase: React.FC = () => {
                              <div className="border border-slate-200 h-full p-4 relative z-0 opacity-80">
                                  <h4 className="font-serif text-center italic text-slate-800 text-lg mt-4 mb-6">Prologue</h4>
                                  <div className="space-y-3">
-                                     {[...Array(8)].map((_, i) => (
-                                         <div key={i} className="h-1 bg-slate-400 rounded-full opacity-20" style={{ width: `${Math.random() * 30 + 70}%` }}></div>
+                                     {[75, 82, 90, 78, 85, 95, 80, 88].map((w, i) => (
+                                         <div key={i} className="h-1 bg-slate-400 rounded-full opacity-20" style={{ width: `${w}%` }}></div>
                                      ))}
                                  </div>
                                  <div className="absolute bottom-4 left-0 right-0 text-center text-[10px] text-slate-400 font-serif">1</div>

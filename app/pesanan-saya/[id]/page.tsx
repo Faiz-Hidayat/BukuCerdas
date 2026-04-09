@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
+import Script from 'next/script';
 import Navbar from '../../(marketing)/_components/Navbar';
 import Footer from '../../(marketing)/_components/Footer';
 import {
@@ -23,6 +24,22 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 
+declare global {
+  interface Window {
+    snap?: {
+      pay: (
+        token: string,
+        callbacks: {
+          onSuccess?: (result: unknown) => void;
+          onPending?: (result: unknown) => void;
+          onError?: (result: unknown) => void;
+          onClose?: () => void;
+        }
+      ) => void;
+    };
+  }
+}
+
 interface OrderDetail {
   idPesanan: number;
   kodePesanan: string;
@@ -35,6 +52,7 @@ interface OrderDetail {
   pajakNominal: string;
   totalBayar: string;
   buktiPembayaranUrl: string | null;
+  alasanPembatalan: string | null;
   resi: string | null;
   alamatUser: {
     namaPenerima: string;
@@ -87,18 +105,7 @@ const TRACKING_STEPS = [
   { key: 'selesai', label: 'Selesai', icon: CheckCircle, description: 'Pesanan telah diterima' },
 ];
 
-// Untuk COD, tracking berbeda (tidak ada step pembayaran)
-const TRACKING_STEPS_COD = [
-  {
-    key: 'menunggu_konfirmasi',
-    label: 'Menunggu Konfirmasi',
-    icon: Clock,
-    description: 'Pesanan dibuat, menunggu konfirmasi admin',
-  },
-  { key: 'diproses', label: 'Diproses', icon: Package, description: 'Pesanan sedang diproses' },
-  { key: 'dikirim', label: 'Dikirim', icon: Truck, description: 'Pesanan dalam pengiriman' },
-  { key: 'selesai', label: 'Selesai', icon: CheckCircle, description: 'Pesanan diterima & dibayar' },
-];
+                {/* Removed COD tracker since only transfer now */}
 
 function getStepIndex(status: string, steps: typeof TRACKING_STEPS) {
   const idx = steps.findIndex((s) => s.key === status);
@@ -112,6 +119,8 @@ export default function OrderDetailPage() {
   const [pengaturan, setPengaturan] = useState<PengaturanToko | null>(null);
   const [copied, setCopied] = useState(false);
   const [checkingStatus, setCheckingStatus] = useState(false);
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+  const [confirmingOrder, setConfirmingOrder] = useState(false);
 
   useEffect(() => {
     if (params.id) {
@@ -150,7 +159,32 @@ export default function OrderDetailPage() {
     toast.success('Berhasil disalin');
     setTimeout(() => setCopied(false), 2000);
   };
-
+    // Bayar menggunakan Midtrans (launch Snap)
+    const handlePayMidtrans = async () => {
+      if (!order) return;
+      try {
+        const res = await fetch('/api/payment/midtrans', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ idPesanan: order.idPesanan }),
+        });
+        
+        const data = await res.json();
+        if (res.ok && data.snapToken && window.snap) {
+          window.snap.pay(data.snapToken, {
+            onSuccess: handleCheckPaymentStatus,
+            onPending: handleCheckPaymentStatus,
+            onError: handleCheckPaymentStatus,
+            onClose: handleCheckPaymentStatus,
+          });
+        } else {
+          toast.error(data.error || 'Gagal memuat pembayaran Midtrans');
+        }
+      } catch (error) {
+        console.error('Error launching Midtrans', error);
+        toast.error('Terjadi kesalahan sistem saat memuat pembayaran');
+      }
+    };
   // Cek status pembayaran Midtrans (untuk ewallet/qris yang masih pending)
   const handleCheckPaymentStatus = async () => {
     if (!order) return;
@@ -179,6 +213,31 @@ export default function OrderDetailPage() {
       toast.error('Terjadi kesalahan saat mengecek status');
     } finally {
       setCheckingStatus(false);
+    }
+  };
+
+  const handleConfirmReceive = async () => {
+    if (!order) return;
+    setConfirmingOrder(true);
+    try {
+      const res = await fetch(`/api/user/pesanan/${order.idPesanan}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ statusPesanan: 'selesai' }),
+      });
+      if (res.ok) {
+        toast.success('Pesanan berhasil diselesaikan');
+        setIsConfirmModalOpen(false);
+        fetchOrderDetail(String(order.idPesanan));
+      } else {
+        const err = await res.json();
+        toast.error(err.error || 'Gagal menyelesaikan pesanan');
+      }
+    } catch (error) {
+      console.error('Error confirming order:', error);
+      toast.error('Terjadi kesalahan saat menyelesaikan pesanan');
+    } finally {
+      setConfirmingOrder(false);
     }
   };
 
@@ -224,22 +283,31 @@ export default function OrderDetailPage() {
     );
   }
 
-  const isCOD = order.metodePembayaran === 'cod';
-  const isMidtrans = order.metodePembayaran === 'ewallet' || order.metodePembayaran === 'qris';
+  const isMidtrans = order.metodePembayaran === 'midtrans';
   const isCancelled = order.statusPesanan === 'dibatalkan';
-  const steps = isCOD ? TRACKING_STEPS_COD : TRACKING_STEPS;
+  const steps = TRACKING_STEPS;
   const currentStepIdx = getStepIndex(order.statusPesanan, steps);
 
   // Tampilkan tombol upload hanya untuk transfer_bank saat menunggu_pembayaran
-  const showUploadButton = !isCOD && !isMidtrans && order.statusPesanan === 'menunggu_pembayaran';
+  const showUploadButton = !isMidtrans && order.statusPesanan === 'menunggu_pembayaran';
   // Tampilkan tombol cek status Midtrans untuk ewallet/qris yang masih menunggu
   const showCheckMidtransButton = isMidtrans && order.statusPesanan === 'menunggu_pembayaran';
   // Tampilkan bukti yang sudah diupload saat menunggu_verifikasi
   const showUploadedProof =
-    !isCOD && !isMidtrans && order.buktiPembayaranUrl && order.statusPesanan === 'menunggu_verifikasi';
+    !isMidtrans && order.buktiPembayaranUrl && order.statusPesanan === 'menunggu_verifikasi';
+
+  // URL Midtrans Snap JS
+  const midtransScriptUrl = process.env.NEXT_PUBLIC_MIDTRANS_IS_PRODUCTION === 'true'
+      ? 'https://app.midtrans.com/snap/snap.js'
+      : 'https://app.sandbox.midtrans.com/snap/snap.js';
 
   return (
     <div className="min-h-screen bg-[#FDFBF7]">
+      <Script
+        src={midtransScriptUrl}
+        data-client-key={process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY || ''}
+        strategy="lazyOnload"
+      />
       <Navbar />
 
       <div className="pt-24 pb-12 px-6 lg:px-8 max-w-7xl mx-auto">
@@ -277,16 +345,24 @@ export default function OrderDetailPage() {
               <h2 className="text-lg font-semibold text-slate-900 mb-6">Status Pesanan</h2>
 
               {isCancelled ? (
-                <div className="flex items-center gap-4 p-4 bg-red-50 rounded-xl border border-red-100">
-                  <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
-                    <XCircle className="w-6 h-6 text-red-500" />
-                  </div>
-                  <div>
-                    <p className="font-semibold text-red-700">Pesanan Dibatalkan</p>
-                    <p className="text-sm text-red-600 mt-0.5">
-                      Pesanan ini telah dibatalkan dan tidak dapat diproses lebih lanjut.
-                    </p>
-                  </div>
+                  <div className="flex flex-col gap-3 p-4 bg-red-50 rounded-xl border border-red-100">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
+                        <XCircle className="w-6 h-6 text-red-500" />
+                      </div>
+                      <div>
+                        <p className="font-semibold text-red-700">Pesanan Dibatalkan</p>
+                        <p className="text-sm text-red-600 mt-0.5">
+                          Pesanan ini telah dibatalkan dan tidak dapat diproses lebih lanjut.
+                        </p>
+                      </div>
+                    </div>
+                    {order.alasanPembatalan && (
+                      <div className="bg-white/60 p-3 rounded-lg border border-red-100">
+                        <span className="text-xs font-semibold text-red-800 uppercase tracking-widest block mb-1">Alasan Pembatalan:</span>
+                        <p className="text-sm text-red-700 font-medium">{order.alasanPembatalan}</p>
+                      </div>
+                    )}
                 </div>
               ) : (
                 <div className="relative">
@@ -337,6 +413,16 @@ export default function OrderDetailPage() {
                                 onClick={() => copyToClipboard(order.resi!)}
                                 className="ml-1 p-0.5 hover:bg-blue-100 rounded transition-colors">
                                 {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                              </button>
+                            </div>
+                          )}
+                          {step.key === 'dikirim' && order.statusPesanan === 'dikirim' && (
+                            <div className="mt-4">
+                              <button
+                                onClick={() => setIsConfirmModalOpen(true)}
+                                className="inline-flex items-center justify-center gap-2 bg-green-500 text-white py-2 px-4 rounded-xl text-sm font-medium hover:bg-green-600 transition-all hover:shadow-md">
+                                <CheckCircle className="w-4 h-4" />
+                                Pesanan Diterima
                               </button>
                             </div>
                           )}
@@ -410,34 +496,20 @@ export default function OrderDetailPage() {
               {/* Metode pembayaran badge */}
               <div className="mb-4">
                 <span
-                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold ${
-                    isCOD ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'
-                  }`}>
-                  {isCOD ? (
-                    <Banknote className="w-3.5 h-3.5" />
-                  ) : order.metodePembayaran === 'qris' ? (
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-blue-100 text-blue-700`}>
+                  {order.metodePembayaran === 'qris' ? (
                     <QrCode className="w-3.5 h-3.5" />
                   ) : (
                     <CreditCard className="w-3.5 h-3.5" />
                   )}
-                  {order.metodePembayaran === 'cod' && 'COD (Bayar di Tempat)'}
-                  {order.metodePembayaran === 'transfer_bank' && 'Transfer Bank'}
-                  {order.metodePembayaran === 'ewallet' && 'E-Wallet'}
-                  {order.metodePembayaran === 'qris' && 'QRIS'}
+                    {order.metodePembayaran === 'transfer_bank' && 'Transfer Bank (Manual)'}
+                    {order.metodePembayaran === 'ewallet' && 'E-Wallet (Manual)'}
+                    {order.metodePembayaran === 'qris' && 'QRIS (Manual)'}
+                    {order.metodePembayaran === 'midtrans' && 'Bayar Otomatis (Midtrans)'}
                 </span>
               </div>
 
               {/* Info khusus per metode */}
-              {isCOD && (
-                <div className="p-3 bg-green-50 rounded-xl border border-green-100 text-sm text-green-700">
-                  <p className="font-medium">Bayar saat barang diterima</p>
-                  <p className="text-green-600 mt-1">
-                    Siapkan uang pas sebesar{' '}
-                    <span className="font-bold">Rp {parseFloat(order.totalBayar).toLocaleString('id-ID')}</span>
-                  </p>
-                </div>
-              )}
-
               {order.metodePembayaran === 'transfer_bank' && pengaturan?.nomorRekening && showUploadButton && (
                 <div className="p-3 bg-blue-50 rounded-xl border border-blue-100 text-sm text-blue-700 space-y-2">
                   <p className="font-medium">Transfer ke rekening:</p>
@@ -475,11 +547,11 @@ export default function OrderDetailPage() {
                 </div>
               )}
 
-              {/* Info Midtrans untuk ewallet/qris */}
-              {isMidtrans && showCheckMidtransButton && (
-                <div className="p-3 bg-indigo-50 rounded-xl border border-indigo-100 text-sm text-indigo-700 space-y-2">
-                  <p className="font-medium">
-                    Pembayaran via Midtrans ({order.metodePembayaran === 'ewallet' ? 'E-Wallet' : 'QRIS'})
+{/* Info Midtrans untuk bayar otomatis */}
+                {isMidtrans && showCheckMidtransButton && (
+                  <div className="p-3 bg-indigo-50 rounded-xl border border-indigo-100 text-sm text-indigo-700 space-y-2">
+                    <p className="font-medium">
+                      Pembayaran via Midtrans (Gateway Otomatis)
                   </p>
                   <p className="text-indigo-600">
                     Jika Anda sudah menyelesaikan pembayaran, klik tombol di bawah untuk memperbarui status.
@@ -525,22 +597,30 @@ export default function OrderDetailPage() {
 
               {/* Cek status Midtrans — untuk ewallet/qris yang masih pending */}
               {showCheckMidtransButton && (
-                <button
-                  onClick={handleCheckPaymentStatus}
-                  disabled={checkingStatus}
-                  className="mt-4 w-full flex items-center justify-center gap-2 bg-indigo-500 text-white py-3 rounded-xl font-medium hover:bg-indigo-600 transition-all hover:shadow-lg hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed">
-                  {checkingStatus ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      Mengecek Status...
-                    </>
-                  ) : (
-                    <>
-                      <CreditCard className="w-4 h-4" />
-                      Cek Status Pembayaran
-                    </>
-                  )}
-                </button>
+                <div className="flex flex-col gap-3 mt-4">
+                  <button
+                    onClick={handlePayMidtrans}
+                    className="w-full flex items-center justify-center gap-2 bg-slate-900 text-white py-3 rounded-xl font-medium hover:bg-slate-800 transition-all hover:shadow-lg hover:-translate-y-0.5">
+                    <CreditCard className="w-4 h-4" />
+                    Bayar Sekarang
+                  </button>
+                  <button
+                    onClick={handleCheckPaymentStatus}
+                    disabled={checkingStatus}
+                    className="w-full flex items-center justify-center gap-2 bg-indigo-500 text-white py-3 rounded-xl font-medium hover:bg-indigo-600 transition-all hover:shadow-lg hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed">
+                    {checkingStatus ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        Mengecek Status...
+                      </>
+                    ) : (
+                      <>
+                        <Check className="w-4 h-4" />
+                        Cek Status Pembayaran
+                      </>
+                    )}
+                  </button>
+                </div>
               )}
 
               {/* Ringkasan biaya */}
@@ -556,7 +636,13 @@ export default function OrderDetailPage() {
                 <div className="flex justify-between text-slate-500">
                   <span>Pajak</span>
                   <span>Rp {parseFloat(order.pajakNominal).toLocaleString('id-ID')}</span>
-                </div>
+                </div>                  
+                  {['transfer_bank', 'ewallet', 'qris'].includes(order.metodePembayaran) && (
+                    <div className="flex justify-between text-amber-600 font-medium">
+                      <span>Kode Unik</span>
+                      <span>+ Rp {Math.round(parseFloat(order.totalBayar) - parseFloat(order.subtotal) - parseFloat(order.ongkir) - parseFloat(order.pajakNominal)).toLocaleString('id-ID')}</span>
+                    </div>
+                  )}
                 <div className="flex justify-between text-slate-900 font-bold text-base pt-2 border-t border-slate-100">
                   <span>Total Bayar</span>
                   <span className="text-amber-600">Rp {parseFloat(order.totalBayar).toLocaleString('id-ID')}</span>
@@ -567,7 +653,43 @@ export default function OrderDetailPage() {
         </div>
       </div>
 
+      {/* Modal Konfirmasi Selesai */}
+      {isConfirmModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white rounded-2xl w-full max-w-md p-6 animate-in zoom-in-95 duration-200">
+            <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center mb-4 mx-auto">
+              <CheckCircle className="w-6 h-6 text-green-600" />
+            </div>
+            <h3 className="text-xl font-bold text-slate-900 text-center mb-2">
+              Pesanan Telah Diterima?
+            </h3>
+            <p className="text-slate-500 text-center mb-6">
+              Pastikan produk yang Anda terima sudah sesuai dan dalam kondisi baik. Pesanan yang telah diselesaikan tidak dapat dibatalkan atau dikembalikan.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <button
+                onClick={() => setIsConfirmModalOpen(false)}
+                disabled={confirmingOrder}
+                className="flex-1 py-2.5 px-4 rounded-xl border border-slate-200 text-slate-700 font-medium hover:bg-slate-50 transition-colors disabled:opacity-50">
+                Belum Terkirim
+              </button>
+              <button
+                onClick={handleConfirmReceive}
+                disabled={confirmingOrder}
+                className="flex-1 py-2.5 px-4 rounded-xl bg-green-500 text-white font-medium hover:bg-green-600 transition-colors disabled:opacity-50 flex items-center justify-center">
+                {confirmingOrder ? (
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  'Ya, Selesai'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <Footer />
     </div>
   );
 }
+

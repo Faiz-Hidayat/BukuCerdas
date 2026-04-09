@@ -10,10 +10,13 @@ import {
   ShoppingBag,
   FileText,
   Settings,
+  Truck,
   LogOut,
   ChevronRight,
+  X,
 } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useAdminLayout } from './AdminClientWrapper';
 
 const menuItems = [
   { href: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -21,28 +24,50 @@ const menuItems = [
   { href: '/admin/buku', label: 'Data Buku', icon: Book },
   { href: '/admin/user', label: 'User', icon: Users },
   { href: '/admin/pesanan', label: 'Pesanan', icon: ShoppingBag },
+  { href: '/admin/tarif-ongkir', label: 'Tarif Ongkir', icon: Truck },
   { href: '/admin/laporan', label: 'Laporan', icon: FileText },
   { href: '/admin/pengaturan', label: 'Pengaturan', icon: Settings },
 ];
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const { isSidebarOpen, closeSidebar } = useAdminLayout();
 
   return (
-    <aside
-      data-sidebar
-      className="w-72 bg-slate-900 text-white h-screen fixed left-0 top-0 flex flex-col z-30 shadow-2xl print:hidden">
-      <div className="p-8 border-b border-slate-800">
-        <Link href="/admin/dashboard" className="flex items-center gap-3 group">
-          <div className="bg-amber-500 text-slate-900 p-2 rounded-xl group-hover:scale-110 transition-transform duration-300 shadow-lg shadow-amber-500/20">
-            <Book className="w-6 h-6" />
-          </div>
-          <div>
-            <h1 className="text-xl font-bold tracking-tight text-white">BukuCerdas</h1>
-            <p className="text-xs text-slate-400 font-medium tracking-wide">ADMIN PANEL</p>
-          </div>
-        </Link>
-      </div>
+    <>
+      <AnimatePresence>
+        {isSidebarOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={closeSidebar}
+            className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-40 md:hidden"
+          />
+        )}
+      </AnimatePresence>
+
+      <aside
+        data-sidebar
+        className={`w-72 bg-slate-900 text-white h-[100dvh] fixed left-0 top-0 flex flex-col z-50 shadow-2xl print:hidden transform transition-transform duration-300 md:translate-x-0 ${
+          isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}>
+        <div className="p-6 md:p-8 border-b border-slate-800 flex items-center justify-between">
+          <Link href="/admin/dashboard" className="flex items-center gap-3 group" onClick={closeSidebar}>
+            <div className="bg-amber-500 text-slate-900 p-2 rounded-xl group-hover:scale-110 transition-transform duration-300 shadow-lg shadow-amber-500/20">
+              <Book className="w-6 h-6" />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold tracking-tight text-white">BukuCerdas</h1>
+              <p className="text-xs text-slate-400 font-medium tracking-wide">ADMIN PANEL</p>
+            </div>
+          </Link>
+          <button
+            onClick={closeSidebar}
+            className="md:hidden p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors">
+            <X size={20} />
+          </button>
+        </div>
 
       <nav className="flex-1 overflow-y-auto py-6 px-4 space-y-2 custom-scrollbar">
         {menuItems.map((item) => {
@@ -89,6 +114,7 @@ export default function Sidebar() {
           Keluar
         </button>
       </div>
-    </aside>
+      </aside>
+    </>
   );
 }

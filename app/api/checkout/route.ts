@@ -34,7 +34,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: errors }, { status: 400 });
     }
 
-    const { idAlamat, metodePembayaran } = parsed.data;
+    const { idAlamat, metodePembayaran, selectedItems } = parsed.data;
 
     // Semua operasi checkout dalam 1 transaction (J1, D3)
     const result = await prisma.$transaction(async (tx) => {
@@ -43,6 +43,9 @@ export async function POST(request: Request) {
         where: { idUser: user.idUser },
         include: {
           itemKeranjang: {
+            where: selectedItems && selectedItems.length > 0 ? {
+              idItem: { in: selectedItems.map(Number) }
+            } : undefined,
             include: { buku: true },
           },
         },
@@ -105,19 +108,33 @@ export async function POST(request: Request) {
       const pengaturan = await tx.pengaturanToko.findFirst();
       const pajakPersen = pengaturan ? Number(pengaturan.pajakPersen) : 11;
       const pajakNominal = (subtotal * pajakPersen) / 100;
-      const totalBayar = subtotal + ongkir + pajakNominal;
+      let totalBayar = subtotal + ongkir + pajakNominal;
+
+      // 6.5. Tambahkan kode unik 2 digit untuk pembayaran manual
+      const manualMethods = ['transfer_bank', 'ewallet', 'qris'];
+      if (manualMethods.includes(metodePembayaran)) {
+        const startOfDay = new Date();
+        startOfDay.setHours(0, 0, 0, 0);
+        
+        const countToday = await tx.pesanan.count({
+          where: {
+            tanggalPesan: {
+              gte: startOfDay,
+            },
+          },
+        });
+        
+        // Pola 1-99 berulang (0 berarti 99, 1 berarti 1)
+        const uniqueCode = (countToday % 99) + 1;
+        totalBayar += uniqueCode;
+      }
 
       // 7. Tentukan status sesuai metode pembayaran
       let statusPembayaran: 'belum_dibayar' | 'menunggu_konfirmasi' = 'belum_dibayar';
       let statusPesanan: 'diproses' | 'menunggu_pembayaran' = 'menunggu_pembayaran';
 
-      if (metodePembayaran === 'cod') {
-        statusPembayaran = 'belum_dibayar';
-        statusPesanan = 'diproses';
-      } else {
-        statusPembayaran = 'belum_dibayar';
-        statusPesanan = 'menunggu_pembayaran';
-      }
+      statusPembayaran = 'belum_dibayar';
+      statusPesanan = 'menunggu_pembayaran';
 
       // 8. Generate kode pesanan unik (D9)
       const date = new Date().toISOString().slice(0, 10).replace(/-/g, '');
@@ -126,9 +143,9 @@ export async function POST(request: Request) {
         .padStart(4, '0');
       const kodePesanan = `INV-${date}-${random}`;
 
-      // G1: Generate midtransOrderId untuk metode ewallet/qris
-      const midtransOrderId =
-        metodePembayaran === 'ewallet' || metodePembayaran === 'qris' ? `BC-INV-${date}-${random}-${Date.now()}` : null;
+// G1: Generate midtransOrderId untuk metode midtrans
+        const midtransOrderId =
+          metodePembayaran === 'midtrans' ? `BC-INV-${date}-${random}-${Date.now()}` : null;
 
       // 9. Snapshot alamat (agar tidak berubah jika alamat diedit)
       const alamatSnapshot = JSON.stringify({
@@ -170,9 +187,12 @@ export async function POST(request: Request) {
         });
       }
 
-      // 12. Kosongkan cart (D8)
+      // 12. Kosongkan cart yang dipilih (atau semua jika tidak spesifik) (D8)
       await tx.itemKeranjang.deleteMany({
-        where: { idKeranjang: keranjang.idKeranjang },
+        where: { 
+          idKeranjang: keranjang.idKeranjang,
+          ...(selectedItems && selectedItems.length > 0 ? { idItem: { in: selectedItems.map(Number) } } : {})
+        },
       });
 
       return pesanan;
@@ -201,3 +221,4 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
+
